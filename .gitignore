@@ -1,0 +1,3 @@
+*.o
+src/client/sf_client
+src/client/sftp-test
