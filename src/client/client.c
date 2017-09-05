@@ -74,13 +74,13 @@ int main(int argc, char** argv)
     }
 
     // Verify that required parameters are found
-    if(success && !(pscp_project && pscp_epwd_path && pscp_sftp_url && pscp_pkey_path))
+    if(success && !(pscp_project && pscp_epwd_path && pscp_sftp_url && pscp_pkey_path && pscp_comment))
     {
         success = false;
         fprintf(stderr, "ERROR: not all required parameters were found\n");
         PrintUsage();
     }
-    
+
     // Check that the private key is encrypted
     if(success)
     {
@@ -90,7 +90,7 @@ int main(int argc, char** argv)
             fprintf(stderr, "ERROR: RSA private key must be encrypted\n");
         }
     }
-    
+
     // Create the identifier for the user: <username>_<hostname>
     if(success)
     {
@@ -143,7 +143,7 @@ int main(int argc, char** argv)
     if(success)
     {
         time_t timestamp = time(NULL);
-        size_t len = strlen(pscp_identifier) 
+        size_t len = strlen(pscp_identifier)
             + (((int)log10(timestamp))+1)
             + 2;
         pscp_session_id = (char*)calloc(len, 1);
@@ -169,7 +169,7 @@ int main(int argc, char** argv)
         status = GenerateFilename(&pscp_request_filename, pscp_tmp_directory, pscp_session_id, pscp_request_tag, verbose);
         if(status != 0)
         {
-            fprintf(stderr, "ERROR: could not generate name for server-side %s file\n", pscp_request_tag); 
+            fprintf(stderr, "ERROR: could not generate name for server-side %s file\n", pscp_request_tag);
             success = false;
         }
     }
@@ -178,7 +178,7 @@ int main(int argc, char** argv)
         status = GenerateFilename(&pscp_request_go_filename, pscp_tmp_directory, pscp_session_id, pscp_request_go_tag, verbose);
         if(status != 0)
         {
-            fprintf(stderr, "ERROR: could not generate name for server-side %s file\n", pscp_request_go_tag); 
+            fprintf(stderr, "ERROR: could not generate name for server-side %s file\n", pscp_request_go_tag);
             success = false;
         }
     }
@@ -188,7 +188,7 @@ int main(int argc, char** argv)
         if(status != 0)
         {
             success = false;
-            fprintf(stderr, "ERROR: could not generate name for server-side %s file\n", pscp_response_tag); 
+            fprintf(stderr, "ERROR: could not generate name for server-side %s file\n", pscp_response_tag);
         }
     }
     if(success)
@@ -197,13 +197,13 @@ int main(int argc, char** argv)
         if(status != 0)
         {
             success = false;
-            fprintf(stderr, "ERROR: could not generate name for server-side %s file\n", pscp_response_go_tag); 
+            fprintf(stderr, "ERROR: could not generate name for server-side %s file\n", pscp_response_go_tag);
         }
     }
 
     // Generate the json from the parameters
     if(success)
-    { 
+    {
         int rc = createJsonString(&json_string, pscp_project, pscp_parameters, pscp_identifier, pscp_comment, pscp_epwd_path, pscp_payload_path, verbose);
         if(rc != 0)
         {
@@ -245,7 +245,7 @@ int main(int argc, char** argv)
             fprintf(stderr, "ERROR: unable to open request file for writing: %s\n", pscp_request_filename);
         }
     }
-    
+
     // Initialize the sftp library
     if(success)
     {
@@ -498,7 +498,7 @@ int main(int argc, char** argv)
     {
         printf("DONE\n");
     }
-    
+
     return status;
 }
 
@@ -594,30 +594,35 @@ bool PrivateKeyEncrypted(const char* privKeyPath)
 {
     bool encrypted = false;
     FILE * key = fopen(privKeyPath, "r");
-    fseek(key, 0, SEEK_END);
-    int len = ftell(key);
-    rewind(key);
-    
-    char * privKey = calloc(len+1, 1);
-    if(privKey)
+    if(key)
     {
-        size_t read_len = fread(privKey, 1, len, key);
-    
-        if(read_len == len)
+        fseek(key, 0, SEEK_END);
+        int len = ftell(key);
+        rewind(key);
+
+        char * privKey = calloc(len+1, 1);
+        if(privKey)
         {
-            char* location = strstr(privKey, "ENCRYPTED");
-            if(location)
+            size_t read_len = fread(privKey, 1, len, key);
+
+            if(read_len == len)
             {
-                encrypted = true;
+                char* location = strstr(privKey, "ENCRYPTED");
+                if(location)
+                {
+                    encrypted = true;
+                }
             }
+            free(privKey);
+            privKey = NULL;
         }
-        free(privKey);
-        privKey = NULL;
+    } else {
+            fprintf(stderr, "ERROR: Unable to open ssh key file %s\n", privKeyPath);
     }
     return encrypted;
 }
 
-// Merges the directory, base, and tag into a single string. 
+// Merges the directory, base, and tag into a single string.
 int GenerateFilename(char** filename, const char* directory, const char* base, const char* tag, bool verbose)
 {
     int status = 0;

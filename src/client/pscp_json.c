@@ -294,7 +294,7 @@ int createJsonString(char** rtnStr, const char* pscp_project, const char* pscp_p
                 }
                 else
                 {
-                    if(verbose) fprintf(stderr, "ERROR: Unable to read epwd file %s\n", pscp_epwd_path);
+                    fprintf(stderr, "ERROR: Unable to read epwd file %s\n", pscp_epwd_path);
                     success = false;
                 }
                 free(epwd);
@@ -308,7 +308,7 @@ int createJsonString(char** rtnStr, const char* pscp_project, const char* pscp_p
         else
         {
             success = false;
-            if(verbose) fprintf(stderr, "ERROR: Unable to open epwd file %s\n", pscp_epwd_path);
+            fprintf(stderr, "ERROR: Unable to open epwd file %s\n", pscp_epwd_path);
         }
     }
     // Read in payload file (optional)
@@ -333,7 +333,7 @@ int createJsonString(char** rtnStr, const char* pscp_project, const char* pscp_p
         }
         else
         {
-            if(verbose) fprintf(stderr, "ERROR: Unable to open payload file %s\n", pscp_payload_path);
+            fprintf(stderr, "ERROR: Unable to open payload file %s\n", pscp_payload_path);
             success = false;
         }
     }
