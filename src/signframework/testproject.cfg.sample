@@ -1,0 +1,41 @@
+# Test project configuration file
+
+# NOTE: The parameters must be in this order!
+#
+# program executable filename
+
+program=framework_test
+
+# File name for the project audit log
+
+log=logs/testproject.log
+
+# project signing key file name
+
+needkey=true
+key=testprojectkey.tok
+
+
+# auxiliary project configuration file
+
+needauxcfg=false
+#auxcfg=athenaaux.cfg
+
+neediatt=true
+needoatt=true
+needpwd=true
+
+# Project administrator email address
+
+email=framework@email.com
+
+# Notification receivers
+
+notifs=1
+joe@email.com
+
+# Authorized senders (signers) (userid=email)
+
+needsenders=true
+joe=joe@email.com
+fred=fred@email.com

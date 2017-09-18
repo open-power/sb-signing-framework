@@ -1,0 +1,12 @@
+# P8 project auxiliary configuration file
+
+# NOTE: The parameters must be in this order!
+
+sign_algorithm=eccp521
+digest_algorithm=SHA-512
+check_unique=false
+raw_header_input=false
+cfg_files=3
+project=signecc/signecc-swp.cfg
+project=signecc/signecc-swq.cfg
+project=signecc/signecc-swr.cfg

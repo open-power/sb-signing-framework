@@ -1,0 +1,30 @@
+# Audit configuration file
+
+# The parameters must be in this order
+#
+# program=program executable filename
+
+program=audit
+
+# File name for the  audit log
+
+log=logs/audit.log
+
+# files to be added to the program
+
+needkey=false
+needauxcfg=false
+neediatt=false
+needoatt=true
+needpwd=false
+
+# Project administrator
+email=framework@email.com
+
+# Notification receivers (email addresses)
+notifs=0
+
+# Authorized senders (administrators) (userid=email)
+needsenders=true
+joe=joe@email.com
+

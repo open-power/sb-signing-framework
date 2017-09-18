@@ -1,0 +1,41 @@
+# Athena project configuration file
+
+# NOTE: The parameters must be in this order!
+#
+# program executable filename
+
+program=framework_test
+
+# File name for the project audit log
+
+log=logs/athena.log
+
+# project signing key file name
+
+needkey=true
+key=athenakey.tok
+
+
+# auxiliary project configuration file
+
+needauxcfg=true
+auxcfg=athenaaux.cfg
+
+neediatt=true
+needoatt=true
+needpwd=true
+
+# Project administrator email address
+
+email=framework@email.com
+
+# Notification receivers (emails)
+
+notifs=1
+framework@email.com
+
+# Authorized senders (signers) (userid=email)
+
+needsenders=true
+fred=fred@email.com
+

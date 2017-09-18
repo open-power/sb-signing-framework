@@ -1,0 +1,36 @@
+# getpubkeyecc project configuration file
+
+# NOTE: The parameters must be in this order!
+#
+# program executable filename
+
+program=getpubkeyecc
+
+# File name for the project audit log
+
+log=logs/getpubkeyecc.log
+
+# project signing key file name
+
+needkey=false
+
+# auxiliary project configuration file
+
+needauxcfg=false
+
+neediatt=false
+needoatt=true
+needpwd=false
+
+# Project administrator email address
+
+email=framework@email.com
+
+# Notification receivers
+
+notifs=1
+framework@email.com
+
+# Authorized senders (signers) (userid=email)
+
+needsenders=false

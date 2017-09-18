@@ -1,0 +1,6 @@
+# Sender Validate program configuration file
+
+# File names for the output email body
+
+out_body=sender_validate.txt
+

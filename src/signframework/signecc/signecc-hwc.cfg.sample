@@ -1,0 +1,41 @@
+# HWC project configuration file
+
+# NOTE: The parameters must be in this order!
+#
+# program executable filename
+
+program=signecc/signecc
+
+# File name for the project audit log
+
+log=signecc/signecc.log
+
+# project signing key file name
+
+needkey=true
+key=signecc/ecckeyc.tok
+
+# auxiliary project configuration file
+
+needauxcfg=true
+auxcfg=signecc/signecc-hwaux.cfg
+
+neediatt=true
+needoatt=true
+needpwd=true
+
+# Project administrator email address
+
+email=joe@email.com
+
+# Notification receivers (emails)
+
+notifs=1
+joe@email.com
+
+
+# Authorized senders (signers) (userid=email)
+
+needsenders=true
+fred=fred@email.com
+

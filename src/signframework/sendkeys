@@ -1,0 +1,39 @@
+#!/bin/sh
+# Copyright 2017 IBM Corp.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# 	http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+if [ "$1" = "" -o "$2" = "" -o "$3" = "" -o "$4" = "" ]; then
+  echo "syntax: sendkeys <projectname> <binfile> <tokfile> <email>"
+  exit 1
+fi
+
+MSGFILE=./sendkeys.msg
+if [ -e ../sendkeys.msg ]; then
+  MSGFILE=../sendkeys.msg
+fi
+
+if [ ! -e $2 ]; then
+  echo "ERROR: binfile '$2' doesn't appear to exist"
+  exit 1
+fi
+
+if [ ! -e $3 ]; then
+   echo "ERROR: tokfile '$3' doesn't appear to exist"
+   exit 1
+fi
+
+echo "Sending email to $4"
+cat $MSGFILE | mailx -s "$1 signing project keys" -a $2 -a $3 $4
+

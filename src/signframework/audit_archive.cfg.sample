@@ -1,0 +1,10 @@
+# Audit Archive program configuration file
+
+# File names for the output email body
+
+out_body=audit_archive.txt
+
+# Rooted !!! file name for the output attachment
+
+out_attachment=/home/framework/signframework/src/signframework/audit_archive.bin
+

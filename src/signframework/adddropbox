@@ -1,0 +1,95 @@
+#!/bin/sh -e
+# Copyright 2017 IBM Corp.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# 	http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+if [ "$USER" != "root" ]; then
+    echo "adddropbox must be run as root"
+    exit 1;
+fi
+
+if [ ! -e ./adddropbox ]; then
+    echo "adddropbox must be run from framework directory"
+    exit 1;
+fi
+
+if [ "$2" = "" ]; then
+  echo "Syntax: adddropbox <userid> <SSH public key file>"
+  exit 1;
+fi
+USERID=$1
+PUBKEY=$2
+
+if [ ! -e ./request_pub.pem ]; then
+    echo "Generating request encryption key pair"
+    openssl genpkey -algorithm RSA -out request_priv.pem -pkeyopt rsa_keygen_bits:2048
+    chmod 600 request_priv.pem
+    openssl rsa -pubout -in request_priv.pem -out request_pub.pem
+fi
+
+
+REM=`echo $USERID | cut -c 9-`
+if [ "$REM" != "" ]; then
+    echo "Userid character length limit is 8"
+    exit 1;
+fi
+
+if [ ! -e $PUBKEY ]; then
+    echo "Public key file doesn't exist : $PUBKEY"
+    exit 1;
+fi
+
+grep -q ssh-rsa $PUBKEY
+if [ $? -ne 0 ]; then
+    echo "Public key doesn't appear to be in correct format"
+    exit 1;
+fi
+
+if [ -e /home/dropbox/$USERID ]; then
+    echo "Dropbox for $USERID already exists"
+    exit 1;
+fi
+
+# Ok, do this thing
+echo "Creating new dropbox for $USERID"
+
+useradd -s /bin/false -G signers -M $USERID
+mkdir /home/$USERID
+chown root:$USERID /home/$USERID
+chmod 750 /home/$USERID
+mkdir /home/dropbox/$USERID/
+chown $USERID:signers /home/dropbox/$USERID
+chmod 770 /home/dropbox/$USERID
+cp ./request_pub.pem /home/dropbox/$USERID
+mkdir /home/$USERID/dropbox
+mount --bind /home/dropbox/$USERID/ /home/$USERID/dropbox
+echo '/home/dropbox/$USERID/ /home/$USERID/dropbox    none   bind' >> /etc/fstab
+
+echo "
+Match User $USERID
+  ChrootDirectory /home/$USERID
+  ForceCommand internal-sftp
+  AllowTcpForwarding no
+  PermitTunnel no
+  X11Forwarding no
+" >> /etc/ssh/sshd_config
+
+cp $PUBKEY /etc/ssh/authorized_keys/$USERID
+rm -f $PUBKEY
+
+systemctl restart sshd
+
+echo "Dropbox for $USERID setup"
+echo "Next ensure a matching CCA profile exists and then run 'password_generate -profile $USERID -sender <signers email>'"
+
