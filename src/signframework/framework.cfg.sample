@@ -41,8 +41,8 @@ full_email=email.txt
 
 # Rooted !!! file names for the input and output attachments
 
-in_attachment=/home/framework/signframework/src/signframework/iatt.bin
-out_attachment=/home/framework/signframework/src/signframework/oatt.bin
+in_attachment=/home/framework/sb-signing-framework/src/signframework/iatt.bin
+out_attachment=/home/framework/sb-signing-framework/src/signframework/oatt.bin
 
 # File name for the password master AES key token (used to decrypt the
 # password string received in a user email)

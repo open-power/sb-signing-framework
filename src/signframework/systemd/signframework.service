@@ -5,9 +5,9 @@ After=network.target sshd.service
 [Service]
 Type=simple
 #PIDFile=/var/run/framework.pid
-WorkingDirectory=/home/framework/signframework/src/signframework
-EnvironmentFile=/home/framework/signframework/src/signframework/systemd/signframework.conf
-ExecStart=/home/framework/signframework/src/signframework/framework $OPTIONS
+WorkingDirectory=/home/framework/sb-signing-framework/src/signframework
+EnvironmentFile=/home/framework/sb-signing-framework/src/signframework/systemd/signframework.conf
+ExecStart=/home/framework/sb-signing-framework/src/signframework/framework $OPTIONS
 ExecReload=/bin/kill -HUP $MAINPID
 KillMode=process
 Restart=on-failure

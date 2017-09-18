@@ -6,5 +6,5 @@ out_body=audit_archive.txt
 
 # Rooted !!! file name for the output attachment
 
-out_attachment=/home/framework/signframework/src/signframework/audit_archive.bin
+out_attachment=/home/framework/sb-signing-framework/src/signframework/audit_archive.bin
 
