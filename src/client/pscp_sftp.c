@@ -98,6 +98,13 @@ struct pscp_sftp_session*  startSftpSession(const char * sftp_url, const char * 
     if(status == CURLE_OK) status = curl_easy_setopt(sftp->curl, CURLOPT_SSH_PRIVATE_KEYFILE, privateKeyPath);
     if(status == CURLE_OK)
     {
+        // Workaround for RedHat bug 1260742 - curl requiring public key
+        char pubKeyPath[PATH_MAX];
+        snprintf(pubKeyPath, PATH_MAX, "%s.pub", privateKeyPath);
+        status = curl_easy_setopt(sftp->curl, CURLOPT_SSH_PUBLIC_KEYFILE, pubKeyPath);
+    }
+    if(status == CURLE_OK)
+    {
         char passphrase[PSCP_PKEY_PASSPHRASE_MAX];
         bzero(passphrase, PSCP_PKEY_PASSPHRASE_MAX);
         status = GetPassword(passphrase, PSCP_PKEY_PASSPHRASE_MAX, verbose);
