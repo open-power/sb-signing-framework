@@ -36,5 +36,15 @@ default: sf_client
 
 all: $(CEXEC)
 
+prefix = /usr/local
+exec_prefix = $(prefix)
+bindir = $(exec_prefix)/bin
+
+install:
+	cp sf_client sftp-test "$(bindir)"
+
+uninstall:
+	cd "$(bindir)" && $(RM) sf_client sftp-test
+
 clean:
 		rm -f $(CEXEC) $(SFTP_T_OBJ) $(CLIENT_OBJ) $(DECRYPT_OBJ) $(COMMON_OBJ)
