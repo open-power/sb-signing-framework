@@ -28,6 +28,7 @@
 #define PSCP_PKEY_PASSPHRASE_MAX 256
 #define PSCP_SFTP_MAX_POLLING_ATTEMPTS 10
 #define PSCP_SFTP_POLLING_DURATION 5       
+#define PSCP_SSHKEY_GETPW_MAX_RETRIES 2
 
 struct pscp_sftp_session
 {
@@ -105,14 +106,51 @@ struct pscp_sftp_session*  startSftpSession(const char * sftp_url, const char * 
     }
     if(status == CURLE_OK)
     {
-        char passphrase[PSCP_PKEY_PASSPHRASE_MAX];
-        bzero(passphrase, PSCP_PKEY_PASSPHRASE_MAX);
-        status = GetPassword(passphrase, PSCP_PKEY_PASSPHRASE_MAX, verbose);
-        if(status == 0)
-        {
+        status = curl_easy_setopt(sftp->curl, CURLOPT_URL, sftp_url);
+    }
+    if(status == CURLE_OK)
+    {
+        status = curl_easy_setopt(sftp->curl, CURLOPT_CONNECT_ONLY, 1L);
+    }
+    if(status == CURLE_OK)
+    {
+        int retry = 0;
+        while(retry <= PSCP_SSHKEY_GETPW_MAX_RETRIES) {
+
+            char passphrase[PSCP_PKEY_PASSPHRASE_MAX];
+            bzero(passphrase, PSCP_PKEY_PASSPHRASE_MAX);
+
+            status = GetPassword(passphrase, PSCP_PKEY_PASSPHRASE_MAX, verbose);
+            if(status != 0)
+            {
+                fprintf(stderr, "ERROR: unable to get password, error: %d\n", status);
+                bzero(passphrase, PSCP_PKEY_PASSPHRASE_MAX);
+                break;
+            }
             status = curl_easy_setopt(sftp->curl, CURLOPT_KEYPASSWD, passphrase);
+            bzero(passphrase, PSCP_PKEY_PASSPHRASE_MAX);
+            if(status != CURLE_OK)
+            {
+                fprintf(stderr, "ERROR: unable to set CURLOPT_KEYPASSWD, curl error: %d\n", status);
+                break;
+            }
+            status = curl_easy_perform(sftp->curl);
+            if(status == 0)
+            {
+                status = curl_easy_setopt(sftp->curl, CURLOPT_CONNECT_ONLY, 0L);
+                break;
+            }
+            if(status != CURLE_LOGIN_DENIED)
+            {
+                fprintf(stderr, "ERROR: unable to establish session with %s\n", sftp->url);
+                break;
+            }
+            retry++;
         }
-        bzero(passphrase, PSCP_PKEY_PASSPHRASE_MAX);
+        if(status == CURLE_LOGIN_DENIED)
+        {
+            fprintf(stderr, "ERROR: unable to connect to %s with provided credentials\n", sftp->url);
+        }
     }
 
     if(status != 0 && sftp)
