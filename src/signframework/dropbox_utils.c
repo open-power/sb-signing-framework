@@ -253,7 +253,6 @@ int processEvent(FrameworkConfig *frameworkConfig, struct inotify_event *i,
     char* filename = NULL;
     DropboxRequest request;
 
-    File_OpenMessageFile(frameworkConfig->outputBodyFilename, "w");
 
     if (verbose) displayInotifyEvent(i);
 
@@ -269,6 +268,9 @@ int processEvent(FrameworkConfig *frameworkConfig, struct inotify_event *i,
         // Ignore anything but a request.go file
         pos = strstr(i->name, ".request.go");
         if (pos != NULL) {
+            // Open message file here, will be closed after request processing
+            File_OpenMessageFile(frameworkConfig->outputBodyFilename, "w");
+
             dropboxRequestInit(&request, frameworkConfig);
             request.dbConfig = db;
             request.event = i;

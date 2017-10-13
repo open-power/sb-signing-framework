@@ -1906,8 +1906,8 @@ int Password_KDF(unsigned char *eku,			/* preallocated 16 bytes, 128 bits */
     unsigned char 	initialization_vector[IV_SIZE];
     unsigned char 	*cleartext = NULL;	/* freed @1 */
     unsigned char 	*ciphertext = NULL;	/* freed @2 */
-    long		cleartext_length;
-    long 		ciphertext_length;
+    long		cleartext_length = 0;
+    long 		ciphertext_length = 0;
 
     /* cannot modify 'sender', so make a copy.  The NUL terminator will be replaced by the 0,1,2 */
     if (rc == 0) {
@@ -2365,6 +2365,7 @@ int CallSigner(Arguments	*arguments,
       parent
     */
     else {
+        File_CloseMessageFile();
         /* NOTE: From here down, no printing to messageFile until child returns. */
         /* parent waits for the child signer program to complete.  The call to wait() gets the
            return code for the exec'ed child process */

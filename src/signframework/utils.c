@@ -99,8 +99,16 @@ int File_Open(FILE **file,
     if (rc == 0) {
         *file = fopen(filename, mode);
         if (*file == NULL) {
-            if (verbose) fprintf(messageFile, "File_Open: Error opening %s for %s, %s\n",
+            if (verbose) {
+                // Check to make sure we aren't attempting to reroute the message file
+                if (file != &messageFile) {
+                    fprintf(messageFile, "File_Open: Error opening %s for %s, %s\n",
                                  filename, mode, strerror(errno));
+                } else {
+                    fprintf(stderr, "File_Open: Error opening %s for %s, %s\n",
+                                 filename, mode, strerror(errno));
+                }
+            }
             rc = ERROR_CODE;
         }
     }
@@ -135,12 +143,12 @@ int File_OpenMessageFile(const char *outputBodyFilename,
     }
     /* if the open failed */
     else {
+        messageFile = stdout;
         fprintf(messageFile,
                 "File_OpenMessageFile: Error cannot open %s\n", outputBodyFilename);
 	    /* Since the configuration is validated at startup, this should never fail.  The only
 	       possibilty is that something happened to the platform while the framework was
 	       running.  No email can be returned and messages go to stdout. */
-        messageFile= stdout;
         rc = RESPONSE_NO_EMAIL;
     }
     return rc;
