@@ -74,7 +74,7 @@ chmod 770 /home/dropbox/$USERID
 cp ./request_pub.pem /home/dropbox/$USERID
 mkdir /home/$USERID/dropbox
 mount --bind /home/dropbox/$USERID/ /home/$USERID/dropbox
-echo '/home/dropbox/$USERID/ /home/$USERID/dropbox    none   bind' >> /etc/fstab
+echo "/home/dropbox/$USERID/ /home/$USERID/dropbox    none   bind" >> /etc/fstab
 
 echo "
 Match User $USERID
