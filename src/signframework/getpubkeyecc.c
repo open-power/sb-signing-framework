@@ -170,42 +170,6 @@ int main(int argc, char** argv)
         if (verbose) fprintf(messageFile, "Signing key file %s\n",
                              keyFileName);
     }
-    /* check the sender authorization */
-    /* NOTE: There's nothing really secret about the public key.  Anyone can read it.  This step is
-       more a demo of how a project program could check secondary authorization. */
-    /* determine whether senders are needed */
-    if (rc == 0) {
-        rc = File_MapNameToBool(&(projectConfig.needSenders),
-                                "needsenders",
-                                lineBuffer,
-                                MAX_LINE_SIZE,
-                                projectConfigFile);
-    }
-    if (rc == 0) {
-        if (verbose) fprintf(messageFile,
-                             "Signing project needs senders: %d\n", projectConfig. needSenders);
-    }
-    /* read the list of authorized senders */
-    if (rc == 0) {
-        rc = File_GetNameValueArray(&(projectConfig.senders),	/* freed by caller */
-                                    &(projectConfig.senderemails),	/* freed by caller */
-                                    &(projectConfig.sendersCount), /* number of authorized senders */
-                                    lineBuffer,
-                                    MAX_LINE_SIZE,
-                                    projectConfigFile);
-    }
-    /* check the sender authorization */
-    if (rc == 0) {
-        rc = ProjectConfig_ValidateSender(sender,
-                                          &projectConfig, NULL);
-        if (rc != 0) {
-            File_Printf(projectLogFile, messageFile,
-                        "ERROR1018: %s is not authorized for project: %s\n",
-                        sender, signproject);
-            fprintf(messageFile,
-                    "Contact framework administrator\n");
-        }
-    }
     /* get the key token */
     if (rc == 0) {
         if (verbose) fprintf(messageFile, "Key token at %s\n",
