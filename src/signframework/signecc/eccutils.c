@@ -308,14 +308,6 @@ int GetSendersArray(char 	****senders,		/* array of senders per project,
             emails = NULL;
         }
         if (rc == 0) {
-            rc = File_GetValueArray(&((*senders)[i]),
-                                    (size_t*)&((*numberOfSenders)[i]),
-                                    "senders",
-                                    lineBuffer,
-                                    lineBufferLength,
-                                    projectConfigFile);
-        }
-        if (rc == 0) {
             if (verbose) fprintf(messageFile,
                                  "GetSendersArray: Found %u authorized senders\n",
                                  (*numberOfSenders)[i]);

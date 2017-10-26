@@ -825,7 +825,7 @@ int File_GetValueArray(char 		***values,	/* freed by caller */
     if (rc == 0) {
         if (*values != NULL) {
             if (verbose) fprintf(messageFile,
-                                 "File_GetNameValueArray: values %p not NULL\n",
+                                 "File_GetValueArray: values %p not NULL\n",
                                  *values);
         }
     }
