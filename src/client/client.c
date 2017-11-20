@@ -95,7 +95,13 @@ int main(int argc, char** argv)
     if(success)
     {
         const char * username = getenv("USER");
-        const char * hostname = getenv("HOSTNAME");
+        char hostname_tmp[256];
+        int hostname_status = gethostname(hostname_tmp, 256);
+        char* hostname = NULL;
+        if(hostname_status == 0)
+        {
+            hostname = hostname_tmp;
+        }
         const char * nullString = "NULL"; // Used if no username or hostname is found
 
         size_t identifierMaxSize =   strlen(username)
@@ -372,11 +378,11 @@ int main(int argc, char** argv)
     {
         int retval = 0;
         unsigned char* payload = NULL;
-        char* stdout = NULL;
+        char* output_str = NULL;
         size_t payload_len = 0;
-        size_t stdout_len = 0;
+        size_t output_str_len = 0;
 
-        status = parseServerResponse(pscp_response_filename, &payload, &payload_len, &stdout, &stdout_len, &retval, verbose);
+        status = parseServerResponse(pscp_response_filename, &payload, &payload_len, &output_str, &output_str_len, &retval, verbose);
         if(status == 0)
         {
             status = retval;
@@ -410,13 +416,13 @@ int main(int argc, char** argv)
                 free(payload);
                 payload = NULL;
             }
-            if(stdout)
+            if(output_str)
             {
                 if(pscp_print_server_stdout)
                 {
-                    printf("\n==== Begin Standard Out ====\n%s\n==== End of Standard Out ====\n", stdout);
+                    printf("\n==== Begin Standard Out ====\n%s\n==== End of Standard Out ====\n", output_str);
                 }
-                free(stdout);
+                free(output_str);
             }
             if(retval != 0)
             {
