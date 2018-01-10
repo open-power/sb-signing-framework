@@ -104,7 +104,8 @@ int main(int argc, char** argv)
         }
         const char * nullString = "NULL"; // Used if no username or hostname is found
 
-        size_t identifierMaxSize =   strlen(username)
+
+        size_t identifierMaxSize = (NULL != username ? strlen(username) : strlen(nullString) )
                                    + strlen(hostname)
                                    + 2;  // Seperator and \0
 
@@ -670,5 +671,3 @@ int GenerateFilename(char** filename, const char* directory, const char* base, c
     }
     return status;
 }
-
-
