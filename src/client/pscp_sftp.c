@@ -98,6 +98,7 @@ struct pscp_sftp_session*  startSftpSession(const char * sftp_url, const char * 
 
     if(status == CURLE_OK) status = curl_easy_setopt(sftp->curl, CURLOPT_PROTOCOLS, CURLPROTO_SFTP);
     if(status == CURLE_OK) status = curl_easy_setopt(sftp->curl, CURLOPT_SSH_PRIVATE_KEYFILE, privateKeyPath);
+
     if(status == CURLE_OK)
     {
         // Workaround for RedHat bug 1260742 - curl requiring public key
@@ -121,19 +122,23 @@ struct pscp_sftp_session*  startSftpSession(const char * sftp_url, const char * 
             char passphrase[PSCP_PKEY_PASSPHRASE_MAX];
             bzero(passphrase, PSCP_PKEY_PASSPHRASE_MAX);
 
-            status = GetPassword(passphrase, PSCP_PKEY_PASSPHRASE_MAX, verbose);
-            if(status != 0)
-            {
-                fprintf(stderr, "ERROR: unable to get password, error: %d\n", status);
+            // Try the first connect without a password, if we detect the ssh-agent
+            //  Otherwise prompt for PW
+            if (0 != retry || NULL == getenv("SSH_AGENT_PID")) {
+                status = GetPassword(passphrase, PSCP_PKEY_PASSPHRASE_MAX, verbose);
+                if(status != 0)
+                {
+                    fprintf(stderr, "ERROR: unable to get password, error: %d\n", status);
+                    bzero(passphrase, PSCP_PKEY_PASSPHRASE_MAX);
+                    break;
+                }
+                status = curl_easy_setopt(sftp->curl, CURLOPT_KEYPASSWD, passphrase);
                 bzero(passphrase, PSCP_PKEY_PASSPHRASE_MAX);
-                break;
-            }
-            status = curl_easy_setopt(sftp->curl, CURLOPT_KEYPASSWD, passphrase);
-            bzero(passphrase, PSCP_PKEY_PASSPHRASE_MAX);
-            if(status != CURLE_OK)
-            {
-                fprintf(stderr, "ERROR: unable to set CURLOPT_KEYPASSWD, curl error: %d\n", status);
-                break;
+                if(status != CURLE_OK)
+                {
+                    fprintf(stderr, "ERROR: unable to set CURLOPT_KEYPASSWD, curl error: %d\n", status);
+                    break;
+                }
             }
             status = curl_easy_perform(sftp->curl);
             if(status == 0)
