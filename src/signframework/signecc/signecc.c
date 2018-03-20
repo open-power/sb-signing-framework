@@ -298,7 +298,8 @@ int CheckAlgorithms(const char *signAlgorithm,
  *        flags (FW key indicator)
  *           1000 0000 0000 0000 0000 0000 0000 0000  Images signed by KeySet 1 (op-build)
  *           0100 0000 0000 0000 0000 0000 0000 0000  Images signed by KeySet 2 (fips-build)
- *           0010 0000 0000 0000 0000 0000 0000 0000  Images signed by KeySet 3 (ODM e.g., IBM AIX Kernel)
+ *           0010 0000 0000 0000 0000 0000 0000 0000  Images signed by KeySet 3 (IBM FCode)
+ *           0001 0000 0000 0000 0000 0000 0000 0000  Images signed by KeySet 4 (AIX build)
  *        --- for attributes
  *           xxxx xxxx xxxx 1000 0000 0000 xxxx xxxx  Enable SBE checking of mailbox scratch reg for secure boot disable req
  *        --- for .new key. container
@@ -317,6 +318,8 @@ int CheckPrefix(const char     *inputAttachmentFileName,   /* file holding prefi
     unsigned char digest[SHA512_SIZE];  /* digest to be generated  */
     const uint32_t OP_BLD_CONTAINER   = 0x80000000;
     const uint32_t FIPS_BLD_CONTAINER = 0x40000000;
+    const uint32_t IBM_FCODE_BLD_CONTAINER = 0x20000000;
+    const uint32_t AIX_BLD_CONTAINER  = 0x10000000;
     const uint32_t NEW_KEY_CONTAINER  = 0x00000001;
     const uint32_t ATTR_FLAG_MASK     = 0x000FFF00;
     const uint16_t HDR_LEN = 98;
@@ -421,10 +424,18 @@ int CheckPrefix(const char     *inputAttachmentFileName,   /* file holding prefi
                 File_Printf(projectLogFile, messageFile,
                     "Valid fips-bld Container: %s\n",
                     inputAttachmentFileName);
+             } else if (hwPrefixHdr->m_flags & IBM_FCODE_BLD_CONTAINER) {
+                File_Printf(projectLogFile, messageFile,
+                    "Valid IBM FCode-bld Container: %s\n",
+                    inputAttachmentFileName);
+             } else if (hwPrefixHdr->m_flags & AIX_BLD_CONTAINER) {
+                File_Printf(projectLogFile, messageFile,
+                    "Valid AIX-bld Container: %s\n",
+                    inputAttachmentFileName);
              } else {
                 File_Printf(projectLogFile, messageFile,
-                    "Invalid Flag Field Set: %s\n",
-                    inputAttachmentFileName);
+                            "Invalid Flag Field Set:'%08X'  %s\n",
+                            hwPrefixHdr->m_flags, inputAttachmentFileName);
                 rc = ERROR_CODE;
              }
         }
