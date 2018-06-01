@@ -300,6 +300,7 @@ int CheckAlgorithms(const char *signAlgorithm,
  *           0100 0000 0000 0000 0000 0000 0000 0000  Images signed by KeySet 2 (fips-build)
  *           0010 0000 0000 0000 0000 0000 0000 0000  Images signed by KeySet 3 (IBM FCode)
  *           0001 0000 0000 0000 0000 0000 0000 0000  Images signed by KeySet 4 (IBM AIX Kernel)
+ *           0000 0000 0001 0000 0000 0000 0000 0000  Images signed by KeySet 12 (ODM/Vendor FCode)
  *        --- for attributes
  *           xxxx xxxx xxxx 1000 0000 0000 xxxx xxxx  Enable SBE checking of mailbox scratch reg for secure boot disable req
  *        --- for .new key. container
@@ -316,12 +317,13 @@ int CheckPrefix(const char     *inputAttachmentFileName,   /* file holding prefi
     PrefixHdr *hwPrefixHdr = NULL; /* prefix header overlay */
     size_t         prefixSize;
     unsigned char digest[SHA512_SIZE];  /* digest to be generated  */
-    const uint32_t OP_BLD_CONTAINER   = 0x80000000;
-    const uint32_t FIPS_BLD_CONTAINER = 0x40000000;
-    const uint32_t IBM_FCODE_BLD_CONTAINER = 0x20000000;
-    const uint32_t AIX_BLD_CONTAINER  = 0x10000000;
-    const uint32_t NEW_KEY_CONTAINER  = 0x00000001;
-    const uint32_t ATTR_FLAG_MASK     = 0x000FFF00;
+    const uint32_t OP_BLD_CONTAINER          = 0x80000000;
+    const uint32_t FIPS_BLD_CONTAINER        = 0x40000000;
+    const uint32_t IBM_FCODE_BLD_CONTAINER   = 0x20000000;
+    const uint32_t AIX_BLD_CONTAINER         = 0x10000000;
+    const uint32_t ODM_FCODE_BLD_CONTAINER   = 0x00100000;
+    const uint32_t NEW_KEY_CONTAINER         = 0x00000001;
+    const uint32_t ATTR_FLAG_MASK            = 0x000FFF00;
     const uint16_t HDR_LEN = 98;
     const uint8_t  HDR_VER = 1;
     const uint8_t  HDR_HASH = 1;
@@ -431,6 +433,10 @@ int CheckPrefix(const char     *inputAttachmentFileName,   /* file holding prefi
              } else if (hwPrefixHdr->m_flags & AIX_BLD_CONTAINER) {
                 File_Printf(projectLogFile, messageFile,
                             "Valid aix-bld Container: %s\n",
+                    inputAttachmentFileName);
+             } else if (hwPrefixHdr->m_flags & ODM_FCODE_BLD_CONTAINER) {
+                File_Printf(projectLogFile, messageFile,
+                    "Valid odm_fcode-bld Container: %s\n",
                     inputAttachmentFileName);
              } else {
                 File_Printf(projectLogFile, messageFile,
