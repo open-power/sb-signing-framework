@@ -18,6 +18,7 @@ src/signframework/sender_validate
 src/signframework/setclock
 src/signframework/signecc/getkeysecc
 src/signframework/signecc/signecc
+src/signframework/sign_sha512/sign_sha512
 src/signframework/*.bin
 src/signframework/*.tok
 src/signframework/*.pem

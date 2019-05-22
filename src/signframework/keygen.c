@@ -60,7 +60,7 @@ int main(int argc, char** argv)
     const char 	*password;		/* optional user password */
     unsigned int bitSize = 2048;	/* default RSA key size */
     int encrypt = FALSE;		/* default is signing key */
-    
+
     /* skeleton CCA key token, template parameters for the eventual generated key pair */
     long          	skeleton_key_length;
     unsigned char 	skeleton_key[2500];	/* CCA key template, maximum length */
@@ -75,7 +75,7 @@ int main(int argc, char** argv)
     setvbuf(stdout, 0, _IONBF, 0);	/* output may be going through pipe */
     start_time = time(NULL);
     printf("keygen: Key generation at %s", ctime(&start_time));
-    
+
     /* get command line arguments */
     if (rc == 0) {
         rc = getArgs(&keyFilename, &pubKeyFilename,
@@ -107,12 +107,12 @@ int main(int argc, char** argv)
     /* store the key token in a file */
     if (rc == 0) {
         rc = File_WriteBinaryFile(generated_key, generated_key_length, keyFilename);
-    }    
+    }
     /* extract the public key from the key token */
     if (rc == 0) {
         if (verbose) printf("keygen: extract the public key from the key token\n");
         rc = getPKA96PublicKey(&rsaKeyTokenPublic,	/* output: CCA structure */
-                               generated_key_length,		
+                               generated_key_length,
                                generated_key,
                                bitSize);		/* input: PKA96 key token */
     }
@@ -161,8 +161,8 @@ long getArgs(const char **keyFilename,
 {
     long	rc = 0;
     int		irc = 0;
-    int 	i;
-    char 	dummy;			/* extra characters */
+    int 	i = 0;
+    char 	dummy = '\0';   /* extra characters */
 
     /* command line argument defaults */
     *keyFilename = NULL;
@@ -170,7 +170,7 @@ long getArgs(const char **keyFilename,
     *userName = NULL;
     *password = NULL;
     *verbose = FALSE;
-    
+
     /* get the command line arguments */
     for (i=1 ; (i<argc) && (rc == 0) ; i++) {
         if (strcmp(argv[i],"-k") == 0) {
@@ -286,4 +286,3 @@ void printUsage()
     printf("\n");
     return;
 }
-
