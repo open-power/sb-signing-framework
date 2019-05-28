@@ -1,4 +1,4 @@
-/* Copyright 2017 IBM Corp.
+/* Copyright 2019 IBM Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,11 @@ void Ossl_SHA1_valist(unsigned char *md,
 
 void Ossl_SHA256(unsigned char *md, ...);
 void Ossl_SHA256_valist(unsigned char *md,
+			size_t length0, unsigned char *buffer0,
+			va_list ap);
+
+void Ossl_SHA384(unsigned char *md, ...);
+void Ossl_SHA384_valist(unsigned char *md,
 			size_t length0, unsigned char *buffer0,
 			va_list ap);
 
@@ -94,6 +99,19 @@ long osslVerify256(int *valid,
 		   unsigned char *signature,
 		   unsigned long signature_size);
 long osslVerifyRSA256(int *valid,
+		      unsigned char *digest,
+		      RSA *rsaPubKey,
+		      unsigned char *signature,
+		      unsigned long signature_size);
+long osslVerify384(int *valid,
+		   unsigned char *digest,
+		   unsigned char *eArray,
+		   unsigned long eLength,
+		   unsigned char *nArray,
+		   unsigned long nLength,
+		   unsigned char *signature,
+		   unsigned long signature_size);
+long osslVerifyRSA384(int *valid,
 		      unsigned char *digest,
 		      RSA *rsaPubKey,
 		      unsigned char *signature,
