@@ -1,4 +1,4 @@
-/* Copyright 2017 IBM Corp.
+/* Copyright 2019 IBM Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 
 #define SHA1_SIZE	20
 #define SHA256_SIZE	32
+#define SHA384_SIZE	48
 #define SHA512_SIZE	64
 
 #include "ossl_functions.h"
@@ -155,6 +156,63 @@ void Ossl_SHA256_valist(unsigned char *md,
 	}
     }
     SHA256_Final(md, &context);
+    return;
+}
+
+/*
+  SHA-384 functions
+*/
+
+/* Ossl_SHA384() can be called directly to hash a list of streams.
+
+   The ... arguments to be hashed are a list of the form
+   size_t length, unsigned char *buffer
+   terminated by a 0 length
+*/
+
+void Ossl_SHA384(unsigned char *md, ...)
+{
+    va_list	ap;
+
+    va_start(ap, md);
+    Ossl_SHA384_valist(md, 0, NULL, ap);
+    va_end(ap);
+    return;
+}
+
+/* Ossl_SHA384_valist() is the internal function, called with the va_list already created.
+
+   It is called from Ossl_SHA384() to do a simple hash.  Typically length0==0 and buffer0==NULL.
+
+   It can also be called from the HMAC function to hash the variable number of input parameters.  In
+   that case, the va_list for the text is already formed.  length0 and buffer0 are used to input the
+   padded key.
+*/
+
+void Ossl_SHA384_valist(unsigned char *md,
+			size_t length0, unsigned char *buffer0,
+			va_list ap)
+{
+    uint32_t		length;
+    unsigned char	*buffer;
+    int			done = FALSE;
+    SHA512_CTX		context;
+    
+    SHA384_Init(&context);
+    if (length0 !=0) {		/* optional first text block */
+	SHA384_Update(&context, buffer0, length0);	/* hash the buffer */
+    }
+    while (!done) {
+	length = va_arg(ap, size_t);		/* first vararg is the length */
+	if (length != 0) {			/* loop until a zero length argument terminates */
+	    buffer = va_arg(ap, unsigned char *);	/* second vararg is the array */
+	    SHA384_Update(&context, buffer, length);	/* hash the buffer */
+	}
+	else {
+	    done = TRUE;
+	}
+    }
+    SHA384_Final(md, &context);
     return;
 }
 
@@ -765,6 +823,126 @@ long osslVerifyRSA256(int *valid,			/* output boolean */
     }    
     if (rc == 0) {
 	if (verbose) PrintAll(messageFile, "osslVerifyRSA256: Raw decrypt", irc, rawDecrypt);
+    }    
+    return rc;
+}
+
+/* osslVerify384() verifies the digital 'signature' over 'digest' using the public key modulus
+   'nArray' and exponent 'eArray'.  'digest' the SHA-384 digest of the data.
+
+   The modulus and exponent are pure binary streams, with no formatting envelope.
+*/
+
+long osslVerify384(int *valid,			/* output boolean */
+		   unsigned char *digest,
+		   unsigned char *eArray,
+		   unsigned long eLength,
+		   unsigned char *nArray,
+		   unsigned long nLength,
+		   unsigned char *signature,
+		   unsigned long signature_size)
+{
+    long 		rc = 0;			/* function return code */
+    RSA *		rsaPubKey;		/* public key in OpenSSL structure format */
+    BIGNUM *		n;			/* n in BIGNUM format */
+    BIGNUM *		e;			/* e in BIGNUM format */
+
+    rsaPubKey = NULL;				/* freed @1 */
+    n = NULL;					/* freed in RSA structure */
+    e = NULL;					/* freed in RSA structure */
+
+    if (verbose) fprintf(messageFile, "osslVerify384: Verifying using key parts\n");
+    if (verbose) PrintAll(messageFile, "osslVerify384: public key", nLength, nArray);
+    /* construct the openSSL public key object from n and e */
+    if (rc == 0) {
+	rsaPubKey = RSA_new();			/* freed @1 */
+	if (rsaPubKey == NULL) {
+	    fprintf(messageFile, "osslVerify384: Error in RSA_new()\n");
+	    rc = ERROR_CODE;
+	}
+    }
+    if (rc == 0) {
+	/* convert nArray to BIGNUM */
+	n = BN_bin2bn(nArray, nLength, n);
+	if (n == NULL) {
+	    fprintf(messageFile, "osslVerify384: Error in BN_bin2bn\n");
+	    rc = ERROR_CODE;
+	}
+    }
+    if (rc == 0) {
+	rsaPubKey->n = n;	/* store n in the RSA structure */
+	/* convert eArray to BIGNUM */
+	e = BN_bin2bn(eArray, eLength, e);	
+	if (e == NULL) {
+	    fprintf(messageFile, "osslVerify384: Error in BN_bin2bn\n");
+	    rc = ERROR_CODE;
+	}
+    }
+    if (rc == 0) {
+	rsaPubKey->e = e;	/* store e in the RSA structure */
+    }
+    if (rc == 0) {
+	rc = osslVerifyRSA384(valid,		/* output boolean */
+			      digest,		/* input digest */
+			      rsaPubKey, 		/* OpenSSL RSA key token */
+			      signature,		/* input signature */
+			      signature_size);
+    }
+    if (rsaPubKey != NULL) {
+	RSA_free(rsaPubKey);		/* @1 */
+    }
+    return rc;
+}
+
+/* osslVerifyRSA384() verifies the digital 'signature' over 'digest' using the OpenSSL RSA key
+   token.  'digest' is the SHA-384 digest of the data.  */
+
+long osslVerifyRSA384(int *valid,			/* output boolean */
+		      unsigned char *digest,
+		      RSA *rsaPubKey, 		/* OpenSSL RSA key token */
+		      unsigned char *signature,
+		      unsigned long signature_size)
+{
+    long 		rc = 0;			/* function return code */
+    int			irc;			/* OpenSSL return code */
+    unsigned char 	rawDecrypt[signature_size];	/* for debug */
+
+    if (verbose) fprintf(messageFile, "osslVerifyRSA384: Verifying using key token\n");
+    if (verbose) PrintAll(messageFile, "osslVerifyRSA384: digest", SHA384_SIZE, digest);
+    if (rc == 0) {
+	/* RSA_verify() returns 1 on successful verification, 0 otherwise. */
+	*valid = RSA_verify(NID_sha384,
+			    digest, SHA384_SIZE,
+			    signature, signature_size, rsaPubKey);
+	if (verbose) fprintf(messageFile, "\tosslVerifyRSA384: RSA_verify valid %d (should be 1)\n",
+			     *valid);
+    }
+    /*
+      for debug, do a raw decrypt and print the result
+
+      The result should be:
+
+      PKCS#1 padding		00 01 FF ... FF 00
+      SHA with RSA OID	19 bytes
+      SHA-384 hash		48 bytes
+    */
+    if (rc == 0) {
+	/* int RSA_public_decrypt(int flen, unsigned char *from,
+	   unsigned char *to, RSA *rsa, int padding);
+	*/
+	irc = RSA_public_decrypt(signature_size, signature,
+				 rawDecrypt,
+				 rsaPubKey,
+				 RSA_NO_PADDING);
+	if (verbose) fprintf(messageFile,
+			     "\tosslVerifyRSA384: raw decrypt irc %d (should be key length)\n", irc);
+	if (irc == -1) {
+	    fprintf(messageFile, "tosslVerifyRSA384: Error in RSA_public_decrypt\n");
+	    rc = ERROR_CODE;
+	}
+    }    
+    if (rc == 0) {
+	if (verbose) PrintAll(messageFile, "osslVerifyRSA384: Raw decrypt", irc, rawDecrypt);
     }    
     return rc;
 }

@@ -1,4 +1,4 @@
-/* Copyright 2017 IBM Corp.
+/* Copyright 2019 IBM Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@
 #define N_BIT_SIZE_MAX	4096		/* bits, public modulus for 4096 bit key */
 #define SHA1_SIZE	20
 #define SHA256_SIZE	32
+#define SHA384_SIZE	48
 #define SHA512_SIZE	64
 
 /* PKA96 RSA token header */
