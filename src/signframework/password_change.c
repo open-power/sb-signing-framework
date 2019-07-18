@@ -514,6 +514,10 @@ int GetArgs(const char **outputBodyFilename,
     }
     /* verify command line arguments */
     if (rc == 0) {
+        // If the usr isn't specified just use the sender
+        if (*profileId == NULL) {
+            *profileId = *sender;
+        }
         if (*profileId == NULL) {
             fprintf(messageFile,
                     "ERROR1010: -usr option missing\n");
