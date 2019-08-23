@@ -83,7 +83,7 @@ void Ossl_SHA1_valist(unsigned char *md,
     unsigned char	*buffer;
     int			done = FALSE;
     SHA_CTX		context;
-    
+
     SHA1_Init(&context);
     if (length0 !=0) {		/* optional first text block */
 	SHA1_Update(&context, buffer0, length0);	/* hash the buffer */
@@ -140,7 +140,7 @@ void Ossl_SHA256_valist(unsigned char *md,
     unsigned char	*buffer;
     int			done = FALSE;
     SHA256_CTX		context;
-    
+
     SHA256_Init(&context);
     if (length0 !=0) {		/* optional first text block */
 	SHA256_Update(&context, buffer0, length0);	/* hash the buffer */
@@ -197,7 +197,7 @@ void Ossl_SHA384_valist(unsigned char *md,
     unsigned char	*buffer;
     int			done = FALSE;
     SHA512_CTX		context;
-    
+
     SHA384_Init(&context);
     if (length0 !=0) {		/* optional first text block */
 	SHA384_Update(&context, buffer0, length0);	/* hash the buffer */
@@ -254,7 +254,7 @@ void Ossl_SHA512_valist(unsigned char *md,
     unsigned char	*buffer;
     int			done = FALSE;
     SHA512_CTX		context;
-    
+
     SHA512_Init(&context);
     if (length0 !=0) {		/* optional first text block */
 	SHA512_Update(&context, buffer0, length0);	/* hash the buffer */
@@ -305,7 +305,7 @@ int Ossl_HashBinaryFile(unsigned char *digest,
 */
 
 /* Ossl_HMAC_Generate() can be called directly to HMAC a list of streams.
-   
+
    The ... arguments are a message list of the form
    size_t length, unsigned char *buffer
    terminated by a 0 length
@@ -316,7 +316,7 @@ void Ossl_HMAC_Generate(unsigned char *hmac,
 		       ...)
 {
     va_list	ap;
-    
+
     va_start(ap, hmac_key);
     Ossl_HMAC_Generatevalist(hmac, hmac_key, ap);
     va_end(ap);
@@ -363,7 +363,7 @@ void Ossl_HMAC_Generatevalist(unsigned char *hmac,
 }
 
 /* Ossl_HMAC_Check() can be called directly to check the HMAC of a list of streams.
-   
+
    The ... arguments are a list of the form
    size_t length, unsigned char *buffer
    terminated by a 0 length
@@ -476,7 +476,7 @@ int Ossl_AES_Decrypt(unsigned char **decrypt_data,   		/* output, caller frees *
     unsigned char       *pad_data;
     AES_KEY 		aes_dec_key;
     unsigned char       ivec[AES_BLOCK_SIZE];       /* initial chaining vector */
-   
+
     if (rc == 0) {
 	rc = AES_set_decrypt_key(aes_key,
 				 AES_BITS,
@@ -574,7 +574,7 @@ long osslBinToRSA(RSA **rsaPubKey,		/* freed by caller */
     if (rc == 0) {
 	(*rsaPubKey)->n = n;	/* store n in the RSA structure */
 	/* convert eArray to BIGNUM */
-	e = BN_bin2bn(eArray, eLength, e);	
+	e = BN_bin2bn(eArray, eLength, e);
 	if (e == NULL) {
 	    fprintf(messageFile, "osslBinToRSA: Error in BN_bin2bn\n");
 	    rc = ERROR_CODE;
@@ -631,7 +631,7 @@ long osslVerify(int *valid,			/* output boolean */
     if (rc == 0) {
 	rsaPubKey->n = n;	/* store n in the RSA structure */
 	/* convert eArray to BIGNUM */
-	e = BN_bin2bn(eArray, eLength, e);	
+	e = BN_bin2bn(eArray, eLength, e);
 	if (e == NULL) {
 	    fprintf(messageFile, "osslVerify: Error in BN_bin2bn\n");
 	    rc = ERROR_CODE;
@@ -700,10 +700,10 @@ long osslVerifyRSA(int *valid,			/* output boolean */
 	    fprintf(messageFile, "osslVerifyRSA: Error in RSA_public_decrypt\n");
 	    rc = ERROR_CODE;
 	}
-    }    
+    }
     if (rc == 0) {
 	if (verbose) PrintAll(messageFile, "osslVerifyRSA: Raw decrypt", irc, rawDecrypt);
-    }    
+    }
     return rc;
 }
 
@@ -752,7 +752,7 @@ long osslVerify256(int *valid,			/* output boolean */
     if (rc == 0) {
 	rsaPubKey->n = n;	/* store n in the RSA structure */
 	/* convert eArray to BIGNUM */
-	e = BN_bin2bn(eArray, eLength, e);	
+	e = BN_bin2bn(eArray, eLength, e);
 	if (e == NULL) {
 	    fprintf(messageFile, "osslVerify256: Error in BN_bin2bn\n");
 	    rc = ERROR_CODE;
@@ -820,10 +820,10 @@ long osslVerifyRSA256(int *valid,			/* output boolean */
 	    fprintf(messageFile, "tosslVerifyRSA256: Error in RSA_public_decrypt\n");
 	    rc = ERROR_CODE;
 	}
-    }    
+    }
     if (rc == 0) {
 	if (verbose) PrintAll(messageFile, "osslVerifyRSA256: Raw decrypt", irc, rawDecrypt);
-    }    
+    }
     return rc;
 }
 
@@ -872,7 +872,7 @@ long osslVerify384(int *valid,			/* output boolean */
     if (rc == 0) {
 	rsaPubKey->n = n;	/* store n in the RSA structure */
 	/* convert eArray to BIGNUM */
-	e = BN_bin2bn(eArray, eLength, e);	
+	e = BN_bin2bn(eArray, eLength, e);
 	if (e == NULL) {
 	    fprintf(messageFile, "osslVerify384: Error in BN_bin2bn\n");
 	    rc = ERROR_CODE;
@@ -940,10 +940,10 @@ long osslVerifyRSA384(int *valid,			/* output boolean */
 	    fprintf(messageFile, "tosslVerifyRSA384: Error in RSA_public_decrypt\n");
 	    rc = ERROR_CODE;
 	}
-    }    
+    }
     if (rc == 0) {
 	if (verbose) PrintAll(messageFile, "osslVerifyRSA384: Raw decrypt", irc, rawDecrypt);
-    }    
+    }
     return rc;
 }
 
@@ -992,7 +992,7 @@ long osslVerify512(int *valid,			/* output boolean */
     if (rc == 0) {
 	rsaPubKey->n = n;	/* store n in the RSA structure */
 	/* convert eArray to BIGNUM */
-	e = BN_bin2bn(eArray, eLength, e);	
+	e = BN_bin2bn(eArray, eLength, e);
 	if (e == NULL) {
 	    fprintf(messageFile, "osslVerify512: Error in BN_bin2bn\n");
 	    rc = ERROR_CODE;
@@ -1060,9 +1060,143 @@ long osslVerifyRSA512(int *valid,			/* output boolean */
 	    fprintf(messageFile, "tosslVerifyRSA512: Error in RSA_public_decrypt\n");
 	    rc = ERROR_CODE;
 	}
-    }    
+    }
     if (rc == 0) {
 	if (verbose) PrintAll(messageFile, "osslVerifyRSA512: Raw decrypt", irc, rawDecrypt);
-    }    
+    }
+    return rc;
+}
+
+/* osslVerifyRaw() verifies the digital 'signature' over 'digest' using the public key modulus
+   'nArray' and exponent 'eArray'.  'digest' the SHA-384 digest of the data.
+
+   The modulus and exponent are pure binary streams, with no formatting envelope.
+*/
+
+long osslVerifyRaw(int *valid,			/* output boolean */
+		   unsigned char *rawPayload,
+           unsigned long rawPayloadSize,
+		   unsigned char *eArray,
+		   unsigned long eLength,
+		   unsigned char *nArray,
+		   unsigned long nLength,
+		   unsigned char *signature,
+		   unsigned long signature_size)
+{
+    long 		rc = 0;			/* function return code */
+    RSA *		rsaPubKey;		/* public key in OpenSSL structure format */
+    BIGNUM *		n;			/* n in BIGNUM format */
+    BIGNUM *		e;			/* e in BIGNUM format */
+
+    rsaPubKey = NULL;				/* freed @1 */
+    n = NULL;					/* freed in RSA structure */
+    e = NULL;					/* freed in RSA structure */
+
+    if (verbose) fprintf(messageFile, "osslVerifyRaw: Verifying using key parts\n");
+    if (verbose) PrintAll(messageFile, "osslVerifyRaw: public key", nLength, nArray);
+    /* construct the openSSL public key object from n and e */
+    if (rc == 0) {
+	rsaPubKey = RSA_new();			/* freed @1 */
+	if (rsaPubKey == NULL) {
+	    fprintf(messageFile, "osslVerifyRaw: Error in RSA_new()\n");
+	    rc = ERROR_CODE;
+	}
+    }
+    if (rc == 0) {
+	/* convert nArray to BIGNUM */
+	n = BN_bin2bn(nArray, nLength, n);
+	if (n == NULL) {
+	    fprintf(messageFile, "osslVerifyRaw: Error in BN_bin2bn\n");
+	    rc = ERROR_CODE;
+	}
+    }
+    if (rc == 0) {
+	rsaPubKey->n = n;	/* store n in the RSA structure */
+	/* convert eArray to BIGNUM */
+	e = BN_bin2bn(eArray, eLength, e);
+	if (e == NULL) {
+	    fprintf(messageFile, "osslVerifyRaw: Error in BN_bin2bn\n");
+	    rc = ERROR_CODE;
+	}
+    }
+    if (rc == 0) {
+	rsaPubKey->e = e;	/* store e in the RSA structure */
+    }
+    if (rc == 0) {
+	rc = osslVerifyRSARaw(valid,		/* output boolean */
+			      rawPayload,		/* input digest */
+                  rawPayloadSize,
+			      rsaPubKey, 		/* OpenSSL RSA key token */
+			      signature,		/* input signature */
+			      signature_size);
+    }
+    if (rsaPubKey != NULL) {
+	RSA_free(rsaPubKey);		/* @1 */
+    }
+    return rc;
+}
+/* osslVerifyRSARaw() verifies the digital 'signature' over 'rawPayload' using the OpenSSL RSA key
+   token.  'rawPayload' is an arbitrary binary blog  */
+
+long osslVerifyRSARaw(int *valid,			/* output boolean */
+		      unsigned char *rawPayload,
+              unsigned long rawPayloadSize,
+		      RSA *rsaPubKey, 		/* OpenSSL RSA key token */
+		      unsigned char *signature,
+		      unsigned long signature_size)
+{
+    long 		rc = 0;			/* function return code */
+    int			irc;			/* OpenSSL return code */
+    unsigned char 	rawDecrypt[signature_size];	/* for debug */
+
+    if (verbose)
+    {
+        fprintf(messageFile, "osslVerifyRSARaw: Verifying using key token\n");
+	// commenting out to reduce log file size
+        //PrintAll(messageFile, "osslVerifyRSARaw: raw payload", rawPayloadSize, rawPayload);
+    }
+    if (rc == 0)
+    {
+	    irc = RSA_public_decrypt(signature_size, signature,
+	    			 rawDecrypt,
+	    			 rsaPubKey,
+	    			 RSA_NO_PADDING);
+	    if (verbose) fprintf(messageFile,
+			     "\tosslVerifyRSA512: raw decrypt irc %d (should be key length)\n", irc);
+        if(irc != -1)
+        {
+            if(signature_size != rawPayloadSize)
+            {
+                rc = ERROR_CODE;
+                if(verbose)
+                {
+                    fprintf(messageFile, "\tosslVerifyRSARaw: raw payload size and signature size do not match %lu, %lu\n", rawPayloadSize, signature_size);
+                }
+            }
+            else if(0 != memcmp(rawDecrypt, rawPayload, signature_size))
+            {
+                rc = ERROR_CODE;
+                if(verbose)
+                {
+                    fprintf(messageFile, "\tosslVerifyRSARaw: Decrypted signature did not match raw payload\n");
+                }
+            }
+        }
+        else
+        {
+            rc = ERROR_CODE;
+	        if (verbose)
+            {
+                fprintf(messageFile, "\tosslVerifyRSARaw: RSA_public_decrypt valid %d (should be 1)\n",*valid);
+            }
+        }
+        *valid = irc;
+    }
+    /*
+      for debug, do print the result of raw decrypt
+    */
+    if (verbose && rc == 0) {
+	    PrintAll(messageFile, "osslVerifyRSARaw: Raw decrypt", irc, rawDecrypt);
+    }
     return rc;
 }

@@ -713,6 +713,69 @@ int Digital_Signature_Generate(unsigned long *signature_field_length,	/* i/o */
     return rc;
 }
 
+/* Digital_Signature_Generate_Zero_Padding() generates a digital signature using a zero-padding scheme
+
+   'signature_field' is the output signature.
+   'hash' is the hash of the data to be signed.
+   'PKA_private_key' is a PKA96 key pair, the CCA key token
+*/
+
+int Digital_Signature_Generate_Zero_Padding(unsigned long *signature_field_length,	/* i/o */
+                               unsigned long *signature_bit_length,	/* output */
+                               unsigned char *signature_field,		/* output */
+                               unsigned long PKA_private_key_length,	/* input */
+                               unsigned char *PKA_private_key,		/* input */
+                               unsigned long rawPayloadLength,		/* input */
+                               unsigned char *rawPayload)			/* input */
+{
+    int			rc = 0;
+    long		return_code = 0;
+    long		reason_code = 0;
+    long		exit_data_length = 0;
+    long        	rule_array_count = 0;
+    unsigned char 	rule_array[16];	/* rule array can be either 1 or 2 8-byte values */
+
+    if (verbose) fprintf(messageFile,
+                         "Digital_Signature_Generate: generate the digital signature\n");
+    // Commenting this out to reduce verbose output file size
+    //if (verbose) PrintAll(messageFile,
+    //                      "  Digital_Signature_Generate: message raw payload", rawPayloadLength, rawPayload);
+
+    exit_data_length = 0;		/* must be 0 */
+
+    rule_array_count = 1;
+    memcpy(rule_array,"ZERO-PAD", 8);	/* Pad with zeros (although we always pass the full modulus) */
+
+    CSNDDSG(&return_code,
+            &reason_code,
+            &exit_data_length,
+            NULL,
+            &rule_array_count,
+            rule_array,
+            (long *)&PKA_private_key_length,
+            PKA_private_key,
+            (long *)&rawPayloadLength,
+            rawPayload,
+            (long *)signature_field_length,
+            (long *)signature_bit_length,
+            signature_field);
+    if (verbose || (return_code != 0)) {
+        fprintf(messageFile,
+                "  Digital_Signature_Generate: CSNDDSG return_code %08lx reason_code %08lx\n",
+                return_code, reason_code);
+    }
+    if (return_code != 0) {
+        CCA_PrintError(return_code, reason_code);
+        rc = ERROR_CODE;
+    }
+    if (return_code == 0) {
+        if (verbose) PrintAll(messageFile,
+                              "  Digital_Signature_Generate: signature",
+                              *signature_field_length, signature_field);
+    }
+    return rc;
+}
+
 /* Digital_Signature_Verify() verifies the signature using the coprocessor.
 
    'key_token' can be either the public/private key pair or the public key.
@@ -753,6 +816,61 @@ int Digital_Signature_Verify(unsigned long signature_field_length,	/* input */
             key_token,
             (long *)&hash_length,
             hash,
+            (long *)&signature_field_length,
+            signature_field);
+
+    if (verbose || (return_code != 0)) {
+        fprintf(messageFile,
+                "  Digital_Signature_Verify: CSNDDSV return_code %08lx reason_code %08lx\n",
+                return_code, reason_code);
+    }
+    if (return_code != 0) {
+        CCA_PrintError(return_code, reason_code);
+        rc = ERROR_CODE;
+    }
+    return rc;
+}
+
+/* Digital_Signature_Verify_Zero_Padding() verifies the signature using the coprocessor.
+
+   'key_token' can be either the public/private key pair or the public key.
+   'hash' is a hash of the data to be verified.
+   'signature_field' is the signature to be verified.
+*/
+
+int Digital_Signature_Verify_Zero_Padding(unsigned long signature_field_length,	/* input */
+                                          unsigned char *signature_field,		/* input */
+                                          unsigned long key_token_length,		/* input */
+                                          unsigned char *key_token,			/* input */
+                                          unsigned long rawPayloadLength,			/* input */
+                                          unsigned char *rawPayload)			/* input */
+{
+    int			rc = 0;
+    long		return_code = 0;
+    long		reason_code = 0;
+    long		exit_data_length = 0;
+    long        	rule_array_count = 0;
+    unsigned char 	rule_array[16];	/* rule array can be either 1 or 2 8-byte values */
+
+    if (verbose) fprintf(messageFile,
+                         "Digital_Signature_Verify_Zero_Padding: "
+                         "verify the digital signature using the coprocessor\n");
+
+    exit_data_length = 0;			/* must be 0 */
+
+    rule_array_count = 1;
+    memcpy(rule_array,"ZERO-PAD", 8);		/* Zero bytes padding */
+
+    CSNDDSV(&return_code,
+            &reason_code,
+            &exit_data_length,
+            NULL,
+            &rule_array_count,
+            rule_array,
+            (long *)&key_token_length,
+            key_token,
+            (long *)&rawPayloadLength,
+            rawPayload,
             (long *)&signature_field_length,
             signature_field);
 
