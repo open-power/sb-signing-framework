@@ -1067,116 +1067,128 @@ long osslVerifyRSA512(int *valid,			/* output boolean */
     return rc;
 }
 
-/* osslVerifyRaw() verifies the digital 'signature' over 'digest' using the public key modulus
-   'nArray' and exponent 'eArray'.  'digest' the SHA-384 digest of the data.
+// osslVerifyRaw() verifies the digital 'signature' over 'digest' using the public key modulus
+// 'nArray' and exponent 'eArray'.  'digest' the SHA-384 digest of the data.
 
-   The modulus and exponent are pure binary streams, with no formatting envelope.
-*/
+// The modulus and exponent are pure binary streams, with no formatting envelope.
 
-long osslVerifyRaw(int *valid,			/* output boolean */
-		   unsigned char *rawPayload,
-           unsigned long rawPayloadSize,
-		   unsigned char *eArray,
-		   unsigned long eLength,
-		   unsigned char *nArray,
-		   unsigned long nLength,
-		   unsigned char *signature,
-		   unsigned long signature_size)
+long osslVerifyRaw(int *valid, /* output boolean */
+                   unsigned char *rawPayload,
+                   unsigned long rawPayloadSize,
+                   unsigned char *eArray,
+                   unsigned long eLength,
+                   unsigned char *nArray,
+                   unsigned long nLength,
+                   unsigned char *signature,
+                   unsigned long signature_size)
 {
-    long 		rc = 0;			/* function return code */
-    RSA *		rsaPubKey;		/* public key in OpenSSL structure format */
-    BIGNUM *		n;			/* n in BIGNUM format */
-    BIGNUM *		e;			/* e in BIGNUM format */
+    long rc = 0;           /* function return code */
+    RSA *rsaPubKey = NULL; /* public key in OpenSSL structure format */
+    BIGNUM *n = NULL;      /* n in BIGNUM format */
+    BIGNUM *e = NULL;      /* e in BIGNUM format */
 
-    rsaPubKey = NULL;				/* freed @1 */
-    n = NULL;					/* freed in RSA structure */
-    e = NULL;					/* freed in RSA structure */
+    rsaPubKey = NULL; /* freed @1 */
+    n = NULL;         /* freed in RSA structure */
+    e = NULL;         /* freed in RSA structure */
 
-    if (verbose) fprintf(messageFile, "osslVerifyRaw: Verifying using key parts\n");
-    if (verbose) PrintAll(messageFile, "osslVerifyRaw: public key", nLength, nArray);
+    if (verbose)
+    {
+        fprintf(messageFile, "osslVerifyRaw: Verifying using key parts\n");
+        PrintAll(messageFile, "osslVerifyRaw: public key", nLength, nArray);
+    }
     /* construct the openSSL public key object from n and e */
-    if (rc == 0) {
-	rsaPubKey = RSA_new();			/* freed @1 */
-	if (rsaPubKey == NULL) {
-	    fprintf(messageFile, "osslVerifyRaw: Error in RSA_new()\n");
-	    rc = ERROR_CODE;
-	}
+    if (rc == 0)
+    {
+        rsaPubKey = RSA_new(); /* freed @1 */
+        if (rsaPubKey == NULL)
+        {
+            fprintf(messageFile, "osslVerifyRaw: Error in RSA_new()\n");
+            rc = ERROR_CODE;
+        }
     }
-    if (rc == 0) {
-	/* convert nArray to BIGNUM */
-	n = BN_bin2bn(nArray, nLength, n);
-	if (n == NULL) {
-	    fprintf(messageFile, "osslVerifyRaw: Error in BN_bin2bn\n");
-	    rc = ERROR_CODE;
-	}
+    if (rc == 0)
+    {
+        /* convert nArray to BIGNUM */
+        n = BN_bin2bn(nArray, nLength, n);
+        if (n == NULL)
+        {
+            fprintf(messageFile, "osslVerifyRaw: Error in BN_bin2bn\n");
+            rc = ERROR_CODE;
+        }
     }
-    if (rc == 0) {
-	rsaPubKey->n = n;	/* store n in the RSA structure */
-	/* convert eArray to BIGNUM */
-	e = BN_bin2bn(eArray, eLength, e);
-	if (e == NULL) {
-	    fprintf(messageFile, "osslVerifyRaw: Error in BN_bin2bn\n");
-	    rc = ERROR_CODE;
-	}
+    if (rc == 0)
+    {
+        rsaPubKey->n = n; /* store n in the RSA structure */
+        /* convert eArray to BIGNUM */
+        e = BN_bin2bn(eArray, eLength, e);
+        if (e == NULL)
+        {
+            fprintf(messageFile, "osslVerifyRaw: Error in BN_bin2bn\n");
+            rc = ERROR_CODE;
+        }
     }
-    if (rc == 0) {
-	rsaPubKey->e = e;	/* store e in the RSA structure */
+    if (rc == 0)
+    {
+        rsaPubKey->e = e; /* store e in the RSA structure */
     }
-    if (rc == 0) {
-	rc = osslVerifyRSARaw(valid,		/* output boolean */
-			      rawPayload,		/* input digest */
-                  rawPayloadSize,
-			      rsaPubKey, 		/* OpenSSL RSA key token */
-			      signature,		/* input signature */
-			      signature_size);
+    if (rc == 0)
+    {
+        rc = osslVerifyRSARaw(valid,      /* output boolean */
+                              rawPayload, /* input digest */
+                              rawPayloadSize,
+                              rsaPubKey, /* OpenSSL RSA key token */
+                              signature, /* input signature */
+                              signature_size);
     }
-    if (rsaPubKey != NULL) {
-	RSA_free(rsaPubKey);		/* @1 */
+    if (rsaPubKey != NULL)
+    {
+        RSA_free(rsaPubKey); /* @1 */
     }
     return rc;
 }
 /* osslVerifyRSARaw() verifies the digital 'signature' over 'rawPayload' using the OpenSSL RSA key
    token.  'rawPayload' is an arbitrary binary blog  */
 
-long osslVerifyRSARaw(int *valid,			/* output boolean */
-		      unsigned char *rawPayload,
-              unsigned long rawPayloadSize,
-		      RSA *rsaPubKey, 		/* OpenSSL RSA key token */
-		      unsigned char *signature,
-		      unsigned long signature_size)
+long osslVerifyRSARaw(int *valid, /* output boolean */
+                      unsigned char *rawPayload,
+                      unsigned long rawPayloadSize,
+                      RSA *rsaPubKey, /* OpenSSL RSA key token */
+                      unsigned char *signature,
+                      unsigned long signature_size)
 {
-    long 		rc = 0;			/* function return code */
-    int			irc;			/* OpenSSL return code */
-    unsigned char 	rawDecrypt[signature_size];	/* for debug */
+    long rc = 0;                              /* function return code */
+    int irc = NULL;                           /* OpenSSL return code */
+    unsigned char rawDecrypt[signature_size]; /* for debug */
 
     if (verbose)
     {
         fprintf(messageFile, "osslVerifyRSARaw: Verifying using key token\n");
-	// commenting out to reduce log file size
+        // commenting out to reduce log file size
         //PrintAll(messageFile, "osslVerifyRSARaw: raw payload", rawPayloadSize, rawPayload);
     }
     if (rc == 0)
     {
-	    irc = RSA_public_decrypt(signature_size, signature,
-	    			 rawDecrypt,
-	    			 rsaPubKey,
-	    			 RSA_NO_PADDING);
-	    if (verbose) fprintf(messageFile,
-			     "\tosslVerifyRSA512: raw decrypt irc %d (should be key length)\n", irc);
-        if(irc != -1)
+        irc = RSA_public_decrypt(signature_size, signature,
+                                 rawDecrypt,
+                                 rsaPubKey,
+                                 RSA_NO_PADDING);
+        if (verbose)
+            fprintf(messageFile,
+                    "\tosslVerifyRSA512: raw decrypt irc %d (should be key length)\n", irc);
+        if (irc != -1)
         {
-            if(signature_size != rawPayloadSize)
+            if (signature_size != rawPayloadSize)
             {
                 rc = ERROR_CODE;
-                if(verbose)
+                if (verbose)
                 {
                     fprintf(messageFile, "\tosslVerifyRSARaw: raw payload size and signature size do not match %lu, %lu\n", rawPayloadSize, signature_size);
                 }
             }
-            else if(0 != memcmp(rawDecrypt, rawPayload, signature_size))
+            else if (0 != memcmp(rawDecrypt, rawPayload, signature_size))
             {
                 rc = ERROR_CODE;
-                if(verbose)
+                if (verbose)
                 {
                     fprintf(messageFile, "\tosslVerifyRSARaw: Decrypted signature did not match raw payload\n");
                 }
@@ -1185,9 +1197,9 @@ long osslVerifyRSARaw(int *valid,			/* output boolean */
         else
         {
             rc = ERROR_CODE;
-	        if (verbose)
+            if (verbose)
             {
-                fprintf(messageFile, "\tosslVerifyRSARaw: RSA_public_decrypt valid %d (should be 1)\n",*valid);
+                fprintf(messageFile, "\tosslVerifyRSARaw: RSA_public_decrypt valid %d (should be 1)\n", *valid);
             }
         }
         *valid = irc;
@@ -1195,8 +1207,9 @@ long osslVerifyRSARaw(int *valid,			/* output boolean */
     /*
       for debug, do print the result of raw decrypt
     */
-    if (verbose && rc == 0) {
-	    PrintAll(messageFile, "osslVerifyRSARaw: Raw decrypt", irc, rawDecrypt);
+    if (verbose && rc == 0)
+    {
+        PrintAll(messageFile, "osslVerifyRSARaw: Raw decrypt", irc, rawDecrypt);
     }
     return rc;
 }

@@ -26,8 +26,10 @@ src/signframework/*.tok
 src/signframework/*.pem
 src/signframework/*.txt
 src/signframework/*.cfg
+src/signframework/*.log
 src/signframework/logs/*
 src/signframework/*/*.bin
 src/signframework/*/*.tok
 src/signframework/*/*.cfg
+src/signframework/*/*.log
 *.swp
