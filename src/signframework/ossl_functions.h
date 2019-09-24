@@ -129,4 +129,20 @@ long osslVerifyRSA512(int *valid,
 		      RSA *rsaPubKey,
 		      unsigned char *signature,
 		      unsigned long signature_size);
+long osslVerifyRaw(int *valid,
+		      unsigned char *rawPayload,
+			  unsigned long rawPayloadSize,
+		   	  unsigned char *eArray,
+		   	  unsigned long eLength,
+		   	  unsigned char *nArray,
+		   	  unsigned long nLength,
+		      unsigned char *signature,
+		      unsigned long signature_size);
+long osslVerifyRSARaw(int *valid,
+		      unsigned char *rawPayload,
+			  unsigned long rawPayloadSize,
+		      RSA *rsaPubKey,
+		      unsigned char *signature,
+		      unsigned long signature_size);
+
 #endif
