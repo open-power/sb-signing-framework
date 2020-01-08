@@ -415,7 +415,8 @@ int SignSampleRSA(unsigned char 	*keyToken,
                                             keyTokenLength,		/* input */
                                             keyToken,			/* input */
                                             hashLength,			/* input */
-                                            hash);			/* input */
+                                            hash,               /* input */
+                                            SIGN_PKCS_1_1);     /* input */
 
         }
         /* sample  - create the audit log entry */
@@ -456,7 +457,8 @@ int SignSampleRSA(unsigned char 	*keyToken,
                                           keyTokenLength,		/* input */
                                           keyToken,			/* input key */
                                           hashLength,			/* input */
-                                          hash);			/* input hash */
+                                          hash,			/* input hash */
+                                          SIGN_PKCS_1_1);
         }
         /* sample code to verify the signature using openssl */
         if (rc == 0) {

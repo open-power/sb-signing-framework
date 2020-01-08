@@ -19,6 +19,11 @@
 
 #define CCA_KEY_IDENTIFIER_LENGTH 64	/* See CCA manual Key_Generate */
 
+enum SignMode {
+    SIGN_PKCS_1_1,   /* Incoming text must have been hashed and BER ASN.1 encoded */
+    SIGN_PKCS_PSS    /* Incoming text must have been hashed */
+};
+
 int Login_Control(int logIn,
 		   const char *userName,
 		   const char *password);
@@ -32,10 +37,19 @@ int Password_ToMechanism(unsigned char 	**mechanism,
 			 const char 	*password);
 
 int Key_Generate(unsigned char *generated_key_identifier_1);
+/*
+@brief Build a skeleton for an RSA bit size key
+@param token_length Length of resulting token
+@param token Buffer to store token
+@param bitSize RSA Key bit size (2048, 4096)
+@param encrypt If false restricts to a signing key
+@param useRsaAesc Use RSA-AESC token format instead of default RSA-CRT, RSA-AESC requred for RSA-PSS signing scheme
+*/
 int PKA_Key_Token_Build(long *token_length,
-			unsigned char *token,
-			unsigned int bitSize,
-			int encrypt);
+                        unsigned char *token,
+                        unsigned int bitSize,
+                        int encrypt,
+                        int useRsaAesc);
 int Random_Number_Generate_Long(unsigned char *random_number,
 				size_t random_number_length_in);
 int PKA_Decrypt(unsigned long *cleartext_length,
@@ -68,25 +82,27 @@ int PKA_Key_Generate(long *generated_key_identifier_length,
 		     long skeleton_key_token_length,
 		     unsigned char *skeleton_key_token);
 int Digital_Signature_Generate(unsigned long *signature_field_length,
-			       unsigned long *signature_bit_length,
-			       unsigned char *signature_field,
-			       unsigned long PKA_private_key_length,
-			       unsigned char *PKA_private_key,
-			       unsigned long hash_length,
-			       unsigned char *hash);
+                               unsigned long *signature_bit_length,
+                               unsigned char *signature_field,
+                               unsigned long PKA_private_key_length,
+                               unsigned char *PKA_private_key,
+                               unsigned long hash_length,
+                               unsigned char *hash,
+                               enum SignMode signmode);
 int Digital_Signature_Generate_Zero_Padding(unsigned long *signature_field_length,
-			       unsigned long *signature_bit_length,
-			       unsigned char *signature_field,
-			       unsigned long PKA_private_key_length,
-			       unsigned char *PKA_private_key,
-			       unsigned long hash_length,
-			       unsigned char *hash);
+                                            unsigned long *signature_bit_length,
+                                            unsigned char *signature_field,
+                                            unsigned long PKA_private_key_length,
+                                            unsigned char *PKA_private_key,
+                                            unsigned long hash_length,
+                                            unsigned char *hash);
 int Digital_Signature_Verify(unsigned long signature_field_length,
-			     unsigned char *signature_field,
-			     unsigned long key_token_length,
-			     unsigned char *key_token,
-			     unsigned long hash_length,
-			     unsigned char *hash);
+                             unsigned char *signature_field,
+                             unsigned long key_token_length,
+                             unsigned char *key_token,
+                             unsigned long hash_length,
+                             unsigned char *hash,
+                             enum SignMode signmode);
 int Digital_Signature_Verify_Zero_Padding(unsigned long signature_field_length,
 			     					      unsigned char *signature_field,
 			     					      unsigned long key_token_length,
