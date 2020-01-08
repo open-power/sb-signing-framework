@@ -828,8 +828,9 @@ int FrameworkProcess_Process(DropboxRequest *requestParms)
 int FrameworkProcess_ProcessOK(DropboxRequest *requestParms)
 {
     int		rc = 0;
-    size_t	i;
+    size_t	i = 0;
     Arguments	arguments;
+    int idx = 0;
 
     /* project configuration file */
     const char 		*projectConfigFilename = NULL;
@@ -885,6 +886,18 @@ int FrameworkProcess_ProcessOK(DropboxRequest *requestParms)
             rc = RESPONSE_BODY_ONLY;
         }
     }
+
+    /* Append the additional args to the command */
+    if (rc == 0) {
+        for (idx = 0; idx < projectConfig->additionalArgs.argc && rc == 0; idx ++) {
+            rc = Arguments_AddTo(&arguments, projectConfig->additionalArgs.argv[idx], FALSE);
+        }
+    }
+
+    if (rc == 0 && verbose) {
+        rc = Arguments_AddTo(&arguments, "-v", FALSE);
+    }
+
     /* add project email address to output body */
     if (rc == 0) {
         fprintf(messageFile, "Project administrator is %s\n\n", projectConfig->emailProject);
@@ -1196,6 +1209,7 @@ int ProjectConfig_Parse(ProjectConfig *projectConfig,
     size_t	i;
     FILE 	*projectConfigFile = NULL;	/* closed @1 */
     char	*lineBuffer = NULL;		/* freed @2 */
+    char    *token = NULL;
 
     /* allocate a line buffer, used when parsing the configuration file */
     if (rc == 0) {
@@ -1229,6 +1243,16 @@ int ProjectConfig_Parse(ProjectConfig *projectConfig,
                                  lineBuffer,
                                  frameworkConfig->lineMax,
                                  projectConfigFile);
+
+        /* Look for additional arguments and save them away, strip the args from the program name */
+        token = strtok(projectConfig->program, " ");
+        /* Skip past the program name */
+        token = strtok(NULL, " ");
+        while (token != NULL && rc == 0) {
+            printf("Found additional argument '%s'\n", token);
+            rc = Arguments_AddTo(&(projectConfig->additionalArgs), token, FALSE);
+            token = strtok(NULL, " ");
+        }
     }
     if (rc == 0) {
         if (verbose) fprintf(messageFile,
@@ -1602,7 +1626,7 @@ int ProjectConfig_ValidateKeyRSA(size_t	keyTokenLength,
                                         keyTokenLength,		/* input */
                                         keyToken,		/* input */
                                         sizeof(digest),		/* input */
-                                        digest);		/* input */
+                                        digest); /* input */
     }
     /* clean up */
 
