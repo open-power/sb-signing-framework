@@ -140,7 +140,7 @@ int main(int argc, char** argv)
         return EXIT_SUCCESS;
     }
     else {
-        printf("keygen: Failure\n");
+        printf("keygen: Failure : %d\n", (int)rc);
         return EXIT_FAILURE;
     }
 }

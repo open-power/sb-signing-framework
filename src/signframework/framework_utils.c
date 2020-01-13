@@ -1626,7 +1626,8 @@ int ProjectConfig_ValidateKeyRSA(size_t	keyTokenLength,
                                         keyTokenLength,		/* input */
                                         keyToken,		/* input */
                                         sizeof(digest),		/* input */
-                                        digest); /* input */
+                                        digest,         /* input */
+                                        SIGN_PKCS_1_1); /* input */
     }
     /* clean up */
 

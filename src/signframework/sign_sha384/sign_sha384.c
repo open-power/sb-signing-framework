@@ -272,7 +272,8 @@ int Sign(const char 	*keyFileName,
                                         keyTokenLength,			/* input */
                                         keyToken,			/* input */
                                         sizeof(sha384_rsa_oid) + SHA384_SIZE, /* input */
-                                        hash384);			/* input */
+                                        hash384,            /* input */
+                                        SIGN_PKCS_1_1);     /* input */
 
     }
     /* create the audit log entry */

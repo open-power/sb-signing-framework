@@ -30,6 +30,7 @@
 
 /* local */
 #include "cca_functions.h"
+#include "cca_structures.h"
 #include "ossl_functions.h"
 #include "debug.h"
 #include "utils.h"
@@ -512,7 +513,7 @@ int PKA_Key_Token_Build(long *token_length,	/* i/o: skeleton key token length */
         exit_data_length = 0;			/* must be 0 */
         rule_array_count = 2;
 
-        memcpy(rule_array, "RSA-CRT ", 8);	/* store in CRT */
+        memcpy(rule_array, "RSA-AESC", 8);	/* store in CRT with an AES encrypted OPK */
         if (!encrypt) {			/* if encrypt disallowed */
             if (verbose) fprintf(messageFile, "PKA_Key_Token_Build: sign only\n");
             memcpy(rule_array + 8, "SIG-ONLY", 8);	/* signing key */
@@ -664,7 +665,8 @@ int Digital_Signature_Generate(unsigned long *signature_field_length,	/* i/o */
                                unsigned long PKA_private_key_length,	/* input */
                                unsigned char *PKA_private_key,		/* input */
                                unsigned long hash_length,		/* input */
-                               unsigned char *hash)			/* input */
+                               unsigned char *hash,             /* input */
+                               enum SignMode signmode)          /* input */
 {
     int			rc = 0;
     long		return_code = 0;
@@ -680,32 +682,45 @@ int Digital_Signature_Generate(unsigned long *signature_field_length,	/* i/o */
 
     exit_data_length = 0;		/* must be 0 */
 
-    rule_array_count = 1;
-    memcpy(rule_array,"PKCS-1.1", 8);	/* PKCS#1 padding */
+    if (SIGN_PKCS_PSS == signmode) {
+        rule_array_count = 2;
+        memcpy(rule_array,"PKCS-PSS", 8);	/* RSASSA-PSS Signature Scheme */
+        if ((SHA512_SIZE + 4) != hash_length) {
+            fprintf(messageFile,
+                    "  Digital_Signature_Generate: Unsupported hash length for PKCS-PSS sign mode\n");
+            rc = ERROR_CODE;
+        }
+        memcpy(rule_array+8,"SHA-512 ", 8);  /* SHA-512 hash */
+    } else {
+        rule_array_count = 1;
+        memcpy(rule_array,"PKCS-1.1", 8);	/* PKCS#1 padding */
+    }
 
-    CSNDDSG(&return_code,
-            &reason_code,
-            &exit_data_length,
-            NULL,
-            &rule_array_count,
-            rule_array,
-            (long *)&PKA_private_key_length,
-            PKA_private_key,
-            (long *)&hash_length,
-            hash,
-            (long *)signature_field_length,
-            (long *)signature_bit_length,
-            signature_field);
-    if (verbose || (return_code != 0)) {
-        fprintf(messageFile,
-                "  Digital_Signature_Generate: CSNDDSG return_code %08lx reason_code %08lx\n",
-                return_code, reason_code);
+    if (0 == rc) {
+        CSNDDSG(&return_code,
+                &reason_code,
+                &exit_data_length,
+                NULL,
+                &rule_array_count,
+                rule_array,
+                (long *)&PKA_private_key_length,
+                PKA_private_key,
+                (long *)&hash_length,
+                hash,
+                (long *)signature_field_length,
+                (long *)signature_bit_length,
+                signature_field);
+        if (verbose || (return_code != 0)) {
+            fprintf(messageFile,
+                    "  Digital_Signature_Generate: CSNDDSG return_code %08lx reason_code %08lx\n",
+                    return_code, reason_code);
+        }
+        if (return_code != 0) {
+            CCA_PrintError(return_code, reason_code);
+            rc = ERROR_CODE;
+        }
     }
-    if (return_code != 0) {
-        CCA_PrintError(return_code, reason_code);
-        rc = ERROR_CODE;
-    }
-    if (return_code == 0) {
+    if (0 == rc) {
         if (verbose) PrintAll(messageFile,
                               "  Digital_Signature_Generate: signature",
                               *signature_field_length, signature_field);
@@ -788,7 +803,8 @@ int Digital_Signature_Verify(unsigned long signature_field_length,	/* input */
                              unsigned long key_token_length,		/* input */
                              unsigned char *key_token,			/* input */
                              unsigned long hash_length,			/* input */
-                             unsigned char *hash)			/* input */
+                             unsigned char *hash,			/* input */
+                             enum SignMode signmode)        /* input */
 {
     int			rc = 0;
     long		return_code = 0;
@@ -803,8 +819,14 @@ int Digital_Signature_Verify(unsigned long signature_field_length,	/* input */
 
     exit_data_length = 0;			/* must be 0 */
 
-    rule_array_count = 1;
-    memcpy(rule_array,"PKCS-1.1", 8);		/* PKCS#1 padding */
+    if (SIGN_PKCS_PSS == signmode) {
+        rule_array_count = 2;
+        memcpy(rule_array,"PKCS-PSS", 8);		/* PKCS#1 with RSASSA-PSS scheme */
+        memcpy(rule_array+8,"SHA-512 ", 8);
+    } else {
+        rule_array_count = 1;
+        memcpy(rule_array,"PKCS-1.1", 8);		/* PKCS#1 padding */
+    }
 
     CSNDDSV(&return_code,
             &reason_code,
