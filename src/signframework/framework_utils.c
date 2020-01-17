@@ -828,9 +828,7 @@ int FrameworkProcess_Process(DropboxRequest *requestParms)
 int FrameworkProcess_ProcessOK(DropboxRequest *requestParms)
 {
     int		rc = 0;
-    size_t	i = 0;
     Arguments	arguments;
-    int idx = 0;
 
     /* project configuration file */
     const char 		*projectConfigFilename = NULL;
@@ -870,6 +868,7 @@ int FrameworkProcess_ProcessOK(DropboxRequest *requestParms)
     /* index into the frameworkConfig array and retrieve the ProjectConfig structure */
     if (rc == 0) {
         int found = FALSE;
+        size_t	i = 0;
         for (i = 0 ; (i < requestParms->frameworkConfig->projectLength) && !found ; i++) {
             if (strcmp(requestParms->project, requestParms->frameworkConfig->projectNames[i]) == 0) {
                 projectConfig = requestParms->frameworkConfig->projectConfigFiles[i];
@@ -889,6 +888,7 @@ int FrameworkProcess_ProcessOK(DropboxRequest *requestParms)
 
     /* Append the additional args to the command */
     if (rc == 0) {
+        int idx = 0;
         for (idx = 0; idx < projectConfig->additionalArgs.argc && rc == 0; idx ++) {
             rc = Arguments_AddTo(&arguments, projectConfig->additionalArgs.argv[idx], FALSE);
         }
@@ -947,6 +947,7 @@ int FrameworkProcess_ProcessOK(DropboxRequest *requestParms)
        into the final product. */
 #if 0
     if (rc == 0) {
+        size_t	i = 0;
         printf("\nargc = %u\n", arguments.argc);
 
         for (i = 0 ; i < (size_t)arguments.argc ; i++) {
@@ -1156,6 +1157,7 @@ int FrameworkProcess_SendNotificationMessage(const char *project,
 void ProjectConfig_Init(ProjectConfig *projectConfig)
 {
     memset(projectConfig, 0, sizeof(ProjectConfig));
+    Arguments_Init(&(projectConfig->additionalArgs));
     return;
 }
 
@@ -1209,7 +1211,6 @@ int ProjectConfig_Parse(ProjectConfig *projectConfig,
     size_t	i;
     FILE 	*projectConfigFile = NULL;	/* closed @1 */
     char	*lineBuffer = NULL;		/* freed @2 */
-    char    *token = NULL;
 
     /* allocate a line buffer, used when parsing the configuration file */
     if (rc == 0) {
@@ -1245,6 +1246,7 @@ int ProjectConfig_Parse(ProjectConfig *projectConfig,
                                  projectConfigFile);
 
         /* Look for additional arguments and save them away, strip the args from the program name */
+        char *token = NULL;
         token = strtok(projectConfig->program, " ");
         /* Skip past the program name */
         token = strtok(NULL, " ");

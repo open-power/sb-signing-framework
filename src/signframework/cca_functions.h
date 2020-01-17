@@ -37,10 +37,19 @@ int Password_ToMechanism(unsigned char 	**mechanism,
 			 const char 	*password);
 
 int Key_Generate(unsigned char *generated_key_identifier_1);
+/*
+@brief Build a skeleton for an RSA bit size key
+@param token_length Length of resulting token
+@param token Buffer to store token
+@param bitSize RSA Key bit size (2048, 4096)
+@param encrypt If false restricts to a signing key
+@param useRsaAesc Use RSA-AESC token format instead of default RSA-CRT, RSA-AESC requred for RSA-PSS signing scheme
+*/
 int PKA_Key_Token_Build(long *token_length,
-			unsigned char *token,
-			unsigned int bitSize,
-			int encrypt);
+                        unsigned char *token,
+                        unsigned int bitSize,
+                        int encrypt,
+                        int useRsaAesc);
 int Random_Number_Generate_Long(unsigned char *random_number,
 				size_t random_number_length_in);
 int PKA_Decrypt(unsigned long *cleartext_length,
