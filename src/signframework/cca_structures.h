@@ -27,6 +27,8 @@
 #define RSA_PRIVATE_KEY_2048_CRT_DEP	0x05	/* deprecated */
 #define RSA_PRIVATE_KEY_1024_INTERNAL	0x06
 #define RSA_PRIVATE_KEY_CRT		0x08
+#define RSA_PRIVATE_KEY_MODEXP_AES_OPK 0x30
+#define RSA_PRIVATE_KEY_CRT_AES_OPK 0x31
 
 /* keyFormat */
 #define RSA_EXTERNAL_UNENCRYPTED	0x40
@@ -131,6 +133,11 @@ long parsePKA96KeyTokenPrivateKey(RsaKeyTokenPublic *rsaKeyTokenPublic,
                                   long *keyTokenLength,
                                   unsigned char **keyToken,
                                   unsigned int bitSize);
+long parsePKA96KeyTokenPrivateKeyAesOPK(RsaKeyTokenPublic *rsaKeyTokenPublic,
+                                        RsaKeyTokenPrivate *rsaKeyTokenPrivate,
+                                        long *keyTokenLength,
+                                        unsigned char **keyToken,
+                                        unsigned int bitSize);
 
 /*
   Debug Print Functions

@@ -63,6 +63,7 @@ typedef struct tdProjectConfig {
     char        **senderemails; /* array of associated sender email addresses */
     size_t		notificationListCount;	/* number of notification receivers */
     char		**notificationList;	/* array of notification names */
+    Arguments   additionalArgs;     /* Additional sign tool arguments specified in project config */
 } ProjectConfig;
 
 /// Status/configuration information for a dropbox

@@ -60,8 +60,15 @@ long getPKA96PublicKey(RsaKeyTokenPublic *rsaKeyTokenPublic,
                                               &keyToken,
                                               bitSize);
             hasPrivKey = TRUE;	/* flag to remember that the modulus n came from the private key */
-        }
-        else {
+        } else if ((keyTokenLength > 0) && (*keyToken == RSA_PRIVATE_KEY_CRT_AES_OPK)) {
+            rc = parsePKA96KeyTokenPrivateKeyAesOPK(rsaKeyTokenPublic,
+                                                    &rsaKeyTokenPrivate,
+                                                    &keyTokenLength,
+                                                    &keyToken,
+                                                    bitSize);
+            hasPrivKey = TRUE;	/* flag to remember that the modulus n came from the private key */
+
+        } else {
             hasPrivKey = FALSE;
         }
     }
@@ -686,6 +693,307 @@ long parsePKA96KeyTokenPrivateKey(RsaKeyTokenPublic *rsaKeyTokenPublic,
 
     if (verbose) printPKA96KeyTokenPrivateKey(rsaKeyTokenPrivate);
     return 0;
+}
+
+/* parsePKA96KeyTokenPrivateKeyAesOPK() returns CCA RsaKeyTokenPublic and RsaKeyTokenPrivate structures
+   with the members filled in from the binary PKA96 key token.
+
+   It puts the public key modulus n into the RsaKeyTokenPublic, which is where upper layers of the
+   code expect it.
+
+   keyTokenLength is decremented and keyToken is incremented as binary data is consumed.
+
+   If bitSize is not 0, does sanity check against key token.
+*/
+
+long parsePKA96KeyTokenPrivateKeyAesOPK(RsaKeyTokenPublic *rsaKeyTokenPublic,
+                                        RsaKeyTokenPrivate *rsaKeyTokenPrivate,
+                                        long *keyTokenLength,
+                                        unsigned char **keyToken,
+                                        unsigned int bitSize)		/* expected RSA modulus size */
+{
+    unsigned short payloadLength; /* length of payload */
+
+    /* sectionId */
+    if (*keyTokenLength < 1) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error parsing sectionId\n");
+        return -1;
+    }
+    rsaKeyTokenPrivate->sectionId = **keyToken;
+    *keyToken += 1;
+    *keyTokenLength -= 1;
+    if (rsaKeyTokenPrivate->sectionId != RSA_PRIVATE_KEY_CRT_AES_OPK) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error, unknown sectionId %02x\n",
+                             rsaKeyTokenPrivate->sectionId);
+        return -1;
+    }
+    /* version */
+    if (*keyTokenLength < 1) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error parsing version\n");
+        return -1;
+    }
+    rsaKeyTokenPrivate->version = **keyToken;
+    *keyToken += 1;
+    *keyTokenLength -= 1;
+    if (rsaKeyTokenPrivate->version != 0) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error, unknown version %02x\n",
+                             rsaKeyTokenPrivate->version);
+        return -1;
+    }
+    /* sectionLength */
+    if (*keyTokenLength < 2) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error parsing sectionLength\n");
+        return -1;
+    }
+    rsaKeyTokenPrivate->sectionLength = ntohs(*(unsigned short *)*keyToken);
+    *keyToken += 2;
+    *keyTokenLength -= 2;
+    if (rsaKeyTokenPrivate->sectionLength < 134) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Invalid sectionLength\n");
+        return -1;
+    }
+
+    /* Length of assoc data section */
+    *keyToken += 2;
+    *keyTokenLength -= 2;
+
+    /* Length of payload data */
+    payloadLength = ntohs(*(unsigned short *)*keyToken);
+    *keyToken += 2;
+    *keyTokenLength -= 2;
+
+    /* Reserved */
+    *keyToken += 2;
+    *keyTokenLength -= 2;
+
+    /* Assoc data section version */
+    if (**keyToken != 0x03) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Invalid associated data section version : %X\n", **keyToken);
+        return -1;
+    }
+    *keyToken += 1;
+    *keyTokenLength -= 1;
+
+    /* key format */
+    rsaKeyTokenPrivate->keyFormat = **keyToken;
+    if (rsaKeyTokenPrivate->keyFormat != RSA_INTERNAL_ENCRYPTED) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error, unknown keyFormat %02x\n",
+                             rsaKeyTokenPrivate->keyFormat);
+        return -1;
+    }
+    *keyToken += 1;
+    *keyTokenLength -= 1;
+
+    /* key source */
+    rsaKeyTokenPrivate->tokenType = **keyToken;
+    *keyToken += 1;
+    *keyTokenLength -= 1;
+    if (rsaKeyTokenPrivate->tokenType != RSA_TOKEN_INTERNAL_GEN_RANDOM) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error, tokenType unknown %02x\n",
+                             rsaKeyTokenPrivate->tokenType);
+        return -1;
+    }
+
+    /* reserved */
+    *keyToken += 1;
+    *keyTokenLength -= 1;
+
+    /* hash type */
+    *keyToken += 1;
+    *keyTokenLength -= 1;
+
+    /* sha-256 hash of optional sections */
+    *keyToken += 32;
+    *keyTokenLength -= 32;
+
+    /* reserved */
+    *keyToken += 3;
+    *keyTokenLength -= 3;
+
+    /* key usage */
+    /* keyUsageFlag */
+    if (*keyTokenLength < 1) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error parsing keyUsageFlag\n");
+        return -1;
+    }
+    rsaKeyTokenPrivate->keyUsageFlag = **keyToken;
+    *keyToken += 1;
+    *keyTokenLength -= 1;
+    if ((rsaKeyTokenPrivate->keyUsageFlag != SIG_ONLY) &&
+        (rsaKeyTokenPrivate->keyUsageFlag != KEY_MGMT)) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error, unknown keyUsageFlag %02x\n",
+                             rsaKeyTokenPrivate->keyUsageFlag);
+        return -1;
+    }
+
+    /* Format restriction */
+    *keyToken += 1;
+    *keyTokenLength -= 1;
+
+    /* pLength */
+    if (*keyTokenLength < 2) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error parsing pLength\n");
+        return -1;
+    }
+    rsaKeyTokenPrivate->pLength = ntohs(*(unsigned short *)*keyToken);
+    *keyToken += 2;
+    *keyTokenLength -= 2;
+    if (bitSize != 0) {
+        if (rsaKeyTokenPrivate->pLength != (bitSize/(2 * 8))) {
+            if (verbose) fprintf(messageFile,
+                                 "parsePKA96KeyTokenPrivateKeyAesOPK: Error, illegal pLength %hu for bit size %u\n",
+                                 rsaKeyTokenPrivate->pLength, bitSize);
+            return -1;
+        }
+    }
+    /* qLength */
+    if (*keyTokenLength < 2) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error parsing qLength\n");
+        return -1;
+    }
+    rsaKeyTokenPrivate->qLength = ntohs(*(unsigned short *)*keyToken);
+    *keyToken += 2;
+    *keyTokenLength -= 2;
+    if (bitSize != 0) {
+        if (rsaKeyTokenPrivate->qLength != (bitSize/(2 * 8))) {
+            if (verbose) fprintf(messageFile,
+                                 "parsePKA96KeyTokenPrivateKeyAesOPK: Error, illegal qLength %hu for bit size %u\n",
+                                 rsaKeyTokenPrivate->qLength, bitSize);
+            return -1;
+        }
+    }
+    /* dpLength */
+    if (*keyTokenLength < 2) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error parsing dpLength\n");
+        return -1;
+    }
+    rsaKeyTokenPrivate->dpLength = ntohs(*(unsigned short *)*keyToken);
+    *keyToken += 2;
+    *keyTokenLength -= 2;
+    if (bitSize != 0) {
+        if (rsaKeyTokenPrivate->dpLength != (bitSize/(2 * 8))) {
+            if (verbose) fprintf(messageFile,
+                                 "parsePKA96KeyTokenPrivateKeyAesOPK: Error, illegal dpLength %hu for bit size %u\n",
+                                 rsaKeyTokenPrivate->dpLength, bitSize);
+            return -1;
+        }
+    }
+    /* dqLength */
+    if (*keyTokenLength < 2) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error parsing dqLength\n");
+        return -1;
+    }
+    rsaKeyTokenPrivate->dqLength = ntohs(*(unsigned short *)*keyToken);
+    *keyToken += 2;
+    *keyTokenLength -= 2;
+    if (bitSize != 0) {
+        if (rsaKeyTokenPrivate->dqLength != (bitSize/(2 * 8))) {
+            if (verbose) fprintf(messageFile,
+                                 "parsePKA96KeyTokenPrivateKeyAesOPK: Error, illegal dqLength %hu for bit size %u\n",
+                                 rsaKeyTokenPrivate->dqLength, bitSize);
+            return -1;
+        }
+    }
+    /* uLength */
+    if (*keyTokenLength < 2) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error parsing uLength\n");
+        return -1;
+    }
+    rsaKeyTokenPrivate->uLength = ntohs(*(unsigned short *)*keyToken);
+    *keyToken += 2;
+    *keyTokenLength -= 2;
+    if (bitSize != 0) {
+        if (rsaKeyTokenPrivate->uLength != (bitSize/(2 * 8))) {
+            if (verbose) fprintf(messageFile,
+                                 "parsePKA96KeyTokenPrivateKeyAesOPK: Error, illegal uLength %hu for bit size %u\n",
+                                 rsaKeyTokenPrivate->uLength, bitSize);
+            return -1;
+        }
+    }
+    /* nLength */
+    if (*keyTokenLength < 2) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error parsing nLength\n");
+        return -1;
+    }
+    rsaKeyTokenPrivate->nLength = ntohs(*(unsigned short *)*keyToken);
+    /* copy to public key area as a service, since nByteLength in the public token will be 0 */
+    rsaKeyTokenPublic->nByteLength = rsaKeyTokenPrivate->nLength;
+    *keyToken += 2;
+    *keyTokenLength -= 2;
+    if (bitSize != 0) {
+        if (rsaKeyTokenPrivate->nLength != (bitSize/8)) {
+            if (verbose) fprintf(messageFile,
+                                 "parsePKA96KeyTokenPrivateKeyAesOPK: Error illegal nLength %04hx for bit size %u\n",
+                                 rsaKeyTokenPrivate->nLength, bitSize);
+            return -1;
+        }
+    }
+
+    /* reserved */
+    *keyToken += 4;
+    *keyTokenLength -= 4;
+
+    /* OPK data */
+    if (*keyTokenLength < 48) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error parsing OPK data\n");
+        return -1;
+    }
+    *keyToken += 48;
+    *keyTokenLength -= 48;
+
+    /* Key verif pattern */
+    if (*keyTokenLength < 16) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error parsing key verif pattern\n");
+        return -1;
+    }
+    *keyToken += 16;
+    *keyTokenLength -= 16;
+
+    /* reserved */
+    *keyToken += 2;
+    *keyTokenLength -= 2;
+
+    /* n */
+    if (*keyTokenLength < rsaKeyTokenPrivate->nLength) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error parsing n\n");
+        return -1;
+    }
+    memcpy(rsaKeyTokenPublic->n, *keyToken, rsaKeyTokenPrivate->nLength);
+    *keyToken += rsaKeyTokenPrivate->nLength;
+    *keyTokenLength -= rsaKeyTokenPrivate->nLength;
+
+    if (*keyTokenLength < payloadLength) {
+        if (verbose) fprintf(messageFile,
+                             "parsePKA96KeyTokenPrivateKeyAesOPK: Error parsing invalid payload length\n");
+        return -1;
+    }
+    *keyToken += payloadLength;
+    *keyTokenLength -= payloadLength;
+
+    if (verbose) printPKA96KeyTokenPrivateKey(rsaKeyTokenPrivate);
+
+    return 0;
+
 }
 
 /*

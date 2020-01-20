@@ -828,7 +828,6 @@ int FrameworkProcess_Process(DropboxRequest *requestParms)
 int FrameworkProcess_ProcessOK(DropboxRequest *requestParms)
 {
     int		rc = 0;
-    size_t	i;
     Arguments	arguments;
 
     /* project configuration file */
@@ -869,6 +868,7 @@ int FrameworkProcess_ProcessOK(DropboxRequest *requestParms)
     /* index into the frameworkConfig array and retrieve the ProjectConfig structure */
     if (rc == 0) {
         int found = FALSE;
+        size_t	i = 0;
         for (i = 0 ; (i < requestParms->frameworkConfig->projectLength) && !found ; i++) {
             if (strcmp(requestParms->project, requestParms->frameworkConfig->projectNames[i]) == 0) {
                 projectConfig = requestParms->frameworkConfig->projectConfigFiles[i];
@@ -885,6 +885,19 @@ int FrameworkProcess_ProcessOK(DropboxRequest *requestParms)
             rc = RESPONSE_BODY_ONLY;
         }
     }
+
+    /* Append the additional args to the command */
+    if (rc == 0) {
+        int idx = 0;
+        for (idx = 0; idx < projectConfig->additionalArgs.argc && rc == 0; idx ++) {
+            rc = Arguments_AddTo(&arguments, projectConfig->additionalArgs.argv[idx], FALSE);
+        }
+    }
+
+    if (rc == 0 && verbose) {
+        rc = Arguments_AddTo(&arguments, "-v", FALSE);
+    }
+
     /* add project email address to output body */
     if (rc == 0) {
         fprintf(messageFile, "Project administrator is %s\n\n", projectConfig->emailProject);
@@ -934,6 +947,7 @@ int FrameworkProcess_ProcessOK(DropboxRequest *requestParms)
        into the final product. */
 #if 0
     if (rc == 0) {
+        size_t	i = 0;
         printf("\nargc = %u\n", arguments.argc);
 
         for (i = 0 ; i < (size_t)arguments.argc ; i++) {
@@ -1143,6 +1157,7 @@ int FrameworkProcess_SendNotificationMessage(const char *project,
 void ProjectConfig_Init(ProjectConfig *projectConfig)
 {
     memset(projectConfig, 0, sizeof(ProjectConfig));
+    Arguments_Init(&(projectConfig->additionalArgs));
     return;
 }
 
@@ -1229,6 +1244,17 @@ int ProjectConfig_Parse(ProjectConfig *projectConfig,
                                  lineBuffer,
                                  frameworkConfig->lineMax,
                                  projectConfigFile);
+
+        /* Look for additional arguments and save them away, strip the args from the program name */
+        char *token = NULL;
+        token = strtok(projectConfig->program, " ");
+        /* Skip past the program name */
+        token = strtok(NULL, " ");
+        while (token != NULL && rc == 0) {
+            printf("Found additional argument '%s'\n", token);
+            rc = Arguments_AddTo(&(projectConfig->additionalArgs), token, FALSE);
+            token = strtok(NULL, " ");
+        }
     }
     if (rc == 0) {
         if (verbose) fprintf(messageFile,
@@ -1602,7 +1628,8 @@ int ProjectConfig_ValidateKeyRSA(size_t	keyTokenLength,
                                         keyTokenLength,		/* input */
                                         keyToken,		/* input */
                                         sizeof(digest),		/* input */
-                                        digest);		/* input */
+                                        digest,         /* input */
+                                        SIGN_PKCS_1_1); /* input */
     }
     /* clean up */
 

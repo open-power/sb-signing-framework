@@ -43,6 +43,7 @@ int GetArgs(const char **outputBodyFilename,
             unsigned int *bitSize,
             int *text,
             int *verbose,
+            int * rsassa_pss,
             int argc,
             char **argv);
 void PrintUsage(void);
@@ -60,6 +61,7 @@ FILE *messageFile = NULL;
 int verbose = FALSE;
 int debug = FALSE;
 unsigned int MOD_SIZE = N_SIZE;
+int rsassa_pss_mode = FALSE;
 
 int main(int argc, char** argv)
 {
@@ -94,6 +96,7 @@ int main(int argc, char** argv)
                      &bitSize,
                      &text,
                      &verbose,
+                     &rsassa_pss_mode,
                      argc, argv);
     }
     /* log in to CCA */
@@ -251,13 +254,26 @@ int Sign(const char 	*keyFileName,
             rc = ERROR_CODE;
         }
     }
-    if (rc == 0) {
+    int dataSize = 0;
+    int saltLen = 0;
+    enum SignMode signMode = SIGN_PKCS_1_1;
+    if (rc == 0 && !rsassa_pss_mode) {
         if (verbose) fprintf(messageFile, "Sign: Prepending OID\n");
         /* prepend OID */
         memcpy(hash512, sha512_rsa_oid, sizeof(sha512_rsa_oid));
         /* append digest */
         memcpy(hash512 + sizeof(sha512_rsa_oid), digest, SHA512_SIZE);
+        dataSize = sizeof(sha512_rsa_oid) + SHA512_SIZE;
+    } else if (rc == 0 && rsassa_pss_mode) {
+        /* RSASSA-PSS signature scheme passes <4 byte salt length>|<hash> to CCA */
+        /* Use the hash size for the salt length */
+        saltLen = htobe32(SHA512_SIZE);
+        memcpy(hash512, &saltLen, 4);
+        memcpy(hash512+4, digest, SHA512_SIZE);
+        dataSize = SHA512_SIZE+4;
+        signMode = SIGN_PKCS_PSS;
     }
+
     /* sign with the coprocessor.  The coprocessor doesn't know the digest algorithm.  It just
        signs an OID + digest1 */
     if (rc == 0) {
@@ -271,8 +287,9 @@ int Sign(const char 	*keyFileName,
                                         signature,			/* output */
                                         keyTokenLength,			/* input */
                                         keyToken,			/* input */
-                                        sizeof(sha512_rsa_oid) + SHA512_SIZE, /* input */
-                                        hash512);			/* input */
+                                        dataSize,           /* input */
+                                        hash512,            /* input */
+                                        signMode);          /* input */
 
     }
     /* create the audit log entry */
@@ -312,11 +329,12 @@ int Sign(const char 	*keyFileName,
                                       signature,		/* input signature */
                                       keyTokenLength,		/* input */
                                       keyToken,			/* input key */
-                                      sizeof(sha512_rsa_oid) + SHA512_SIZE,	/* input */
-                                      hash512);			/* input hash */
+                                      dataSize,         /* input */
+                                      hash512,			/* input hash */
+                                      signMode);
     }
     /* code to verify the signature using openssl */
-    if (rc == 0) {
+    if (rc == 0 && SIGN_PKCS_1_1 == signMode) {
         if (verbose) fprintf(messageFile,
                              "Sign: verify signature with OpenSSL and the key token\n");
         rc = osslVerify512(&valid,
@@ -378,6 +396,7 @@ int GetArgs(const char **outputBodyFilename,
             unsigned int *bitSize,
             int *text,
             int *verbose,
+            int * rsassa_pss,
             int argc,
             char **argv)
 {
@@ -390,6 +409,7 @@ int GetArgs(const char **outputBodyFilename,
     *outputBodyFilename = NULL;
     *text = FALSE;
     *verbose = FALSE;
+    *rsassa_pss = FALSE;
 
     /* get the command line arguments */
     for (i = 1 ; (i < argc) && (rc == 0) ; i++) {
@@ -519,6 +539,9 @@ int GetArgs(const char **outputBodyFilename,
         }
         else if (strcmp(argv[i],"-v") == 0) {
             *verbose = TRUE;
+        }
+        else if (strcmp(argv[i], "-rsassa-pss") == 0) {
+            *rsassa_pss = TRUE;
         }
         /* This code intentionally does not have an 'else error' clause.  The framework can in
            general add command line arguments that are ignored by the project specific program. */

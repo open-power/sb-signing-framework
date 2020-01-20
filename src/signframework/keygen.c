@@ -34,6 +34,7 @@ long getArgs(const char **keyFilename,
              const char **password,
              unsigned int *bitSize,
              int *encrypt,
+             int *rsaaesc,
              int *verbose,
              int argc,
              char ** argv);
@@ -60,6 +61,7 @@ int main(int argc, char** argv)
     const char 	*password;		/* optional user password */
     unsigned int bitSize = 2048;	/* default RSA key size */
     int encrypt = FALSE;		/* default is signing key */
+    int rsaaesc = FALSE;        /* default is RSA-CRT format token */
 
     /* skeleton CCA key token, template parameters for the eventual generated key pair */
     long          	skeleton_key_length;
@@ -80,7 +82,7 @@ int main(int argc, char** argv)
     if (rc == 0) {
         rc = getArgs(&keyFilename, &pubKeyFilename,
                      &userName, &password, &bitSize, &encrypt,
-                     &verbose, argc, argv);
+                     &rsaaesc, &verbose, argc, argv);
     }
     /*
       Log in
@@ -96,7 +98,7 @@ int main(int argc, char** argv)
     /* build a skeleton key token */
     if (rc == 0) {
         skeleton_key_length = sizeof(skeleton_key);
-        rc = PKA_Key_Token_Build(&skeleton_key_length, skeleton_key, bitSize, encrypt);
+        rc = PKA_Key_Token_Build(&skeleton_key_length, skeleton_key, bitSize, encrypt, rsaaesc);
     }
     /* generate an RSA key pair using the skeleton key token */
     if (rc == 0) {
@@ -140,7 +142,7 @@ int main(int argc, char** argv)
         return EXIT_SUCCESS;
     }
     else {
-        printf("keygen: Failure\n");
+        printf("keygen: Failure : %d\n", (int)rc);
         return EXIT_FAILURE;
     }
 }
@@ -155,6 +157,7 @@ long getArgs(const char **keyFilename,
              const char **password,
              unsigned int *bitSize,
              int *encrypt,
+             int *rsaaesc,
              int *verbose,
              int argc,
              char **argv)
@@ -170,6 +173,7 @@ long getArgs(const char **keyFilename,
     *userName = NULL;
     *password = NULL;
     *verbose = FALSE;
+    *rsaaesc = FALSE;
 
     /* get the command line arguments */
     for (i=1 ; (i<argc) && (rc == 0) ; i++) {
@@ -221,6 +225,9 @@ long getArgs(const char **keyFilename,
         }
         else if (strcmp(argv[i],"-enc") == 0) {
             *encrypt = TRUE;
+        }
+        else if (strcmp(argv[i],"-aesc") == 0) {
+            *rsaaesc = TRUE;
         }
         else if (strcmp(argv[i],"-h") == 0) {
             printUsage();
@@ -281,6 +288,7 @@ void printUsage()
     printf("\t-u user name and password\n");
     printf("\t-sz bit size (default 2048)\n");
     printf("\t-enc (can be used as a encryption key, default signing only)\n");
+    printf("\t-aesc Format as an RSA-AESC token, required for RSA-PSS signing (default RSA-CRT)\n");
     printf("\t-h help\n");
     printf("\t-v enable debug tracing\n");
     printf("\n");
