@@ -27,8 +27,8 @@
 #include <curl/curl.h>
 
 #define PSCP_PKEY_PASSPHRASE_MAX 256
-#define PSCP_SFTP_MAX_POLLING_ATTEMPTS 10
-#define PSCP_SFTP_POLLING_DURATION 5       
+#define PSCP_SFTP_MAX_POLLING_ATTEMPTS 50
+#define PSCP_SFTP_POLLING_DURATION 1
 #define PSCP_SSHKEY_GETPW_MAX_RETRIES 2
 
 struct pscp_sftp_session
