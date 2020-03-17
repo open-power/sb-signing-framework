@@ -190,6 +190,7 @@ int main(int argc, char** argv)
         if (verbose) fprintf(messageFile, "Signing key file %s\n",
                              keyFileName);
     }
+#if 0
     /* check the sender authorization */
     /* NOTE: There's nothing really secret about the public key.  Anyone can read it.  This step is
        more a demo of how a project program could check secondary authorization. */
@@ -226,6 +227,7 @@ int main(int argc, char** argv)
                     "Contact framework administrator\n");
         }
     }
+#endif
     /* get the key token */
     if (rc == 0) {
         if (verbose) fprintf(messageFile, "Key token at %s\n",
