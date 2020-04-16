@@ -515,7 +515,7 @@ int PKA_Key_Token_Build(long *token_length,	/* i/o: skeleton key token length */
         rule_array_count = 2;
 
         if (!useRsaAesc) {
-            memcpy(rule_array, "RSA-CRT", 8);	/* store in CRT */
+            memcpy(rule_array, "RSA-CRT ", 8);	/* store in CRT */
         } else {
             memcpy(rule_array, "RSA-AESC", 8);	/* store in CRT with an AES encrypted OPK */
         }
