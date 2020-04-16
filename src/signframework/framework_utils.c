@@ -1251,7 +1251,7 @@ int ProjectConfig_Parse(ProjectConfig *projectConfig,
         /* Skip past the program name */
         token = strtok(NULL, " ");
         while (token != NULL && rc == 0) {
-            printf("Found additional argument '%s'\n", token);
+            if (verbose) printf("Found additional argument '%s'\n", token);
             rc = Arguments_AddTo(&(projectConfig->additionalArgs), token, FALSE);
             token = strtok(NULL, " ");
         }
