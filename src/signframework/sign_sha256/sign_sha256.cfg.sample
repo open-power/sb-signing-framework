@@ -1,0 +1,38 @@
+# sign_sha256 project configuration file
+
+# NOTE: The parameters must be in this order!
+#
+#	program executable filename
+
+program=sign_sha256/sign_sha256
+
+# File name for the project audit log
+
+log=sign_sha256/sign_sha256.log
+
+#	project signing key file name
+
+needkey=true
+key=athenakey.tok
+
+#	auxiliary project configuration file
+
+needauxcfg=false
+
+neediatt=true
+needoatt=true
+needpwd=true
+
+#	Project administrator email address
+
+email=joe@email.com
+
+# Notification receivers (emails)
+
+notifs=1
+joe@email.com
+
+# Authorized senders (signers) (userid=email)
+
+needsenders=true
+fred=fred@email.com

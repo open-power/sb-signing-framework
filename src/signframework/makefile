@@ -31,6 +31,7 @@ LNFLAGS =  -ggdb -lcrypto -lcsulcca -ljson-c
 
 all:    framework framework_test frameworkkey_generate keygen password_generate password_change \
 		keygeneccp521 audit sender_validate audit_archive getpubkey getpubkeyecc setclock
+	(cd sign_sha256 && make)
 	(cd sign_sha512 && make)
 	(cd signecc && make)
 	(cd sign_rsa_raw && make)
