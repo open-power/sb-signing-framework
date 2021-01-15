@@ -1,4 +1,4 @@
-/* Copyright 2017 IBM Corp.
+/* Copyright 2021 IBM Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/* This program sign an input SHA-512 digest with an RSA key
+/* This program sign an input SHA-256 digest with an RSA key
  */
 
 #include <stdio.h>
@@ -43,7 +43,6 @@ int GetArgs(const char **outputBodyFilename,
             unsigned int *bitSize,
             int *text,
             int *verbose,
-            int * rsassa_pss,
             int argc,
             char **argv);
 void PrintUsage(void);
@@ -61,7 +60,6 @@ FILE *messageFile = NULL;
 int verbose = FALSE;
 int debug = FALSE;
 unsigned int MOD_SIZE = N_SIZE;
-int rsassa_pss_mode = FALSE;
 
 int main(int argc, char** argv)
 {
@@ -96,7 +94,6 @@ int main(int argc, char** argv)
                      &bitSize,
                      &text,
                      &verbose,
-                     &rsassa_pss_mode,
                      argc, argv);
     }
     /* log in to CCA */
@@ -161,7 +158,7 @@ int main(int argc, char** argv)
     return rc;
 }
 
-/* Sign() signs and verifies a SHA-512 digest
+/* Sign() signs and verifies a SHA-256 digest
 
  */
 
@@ -174,6 +171,7 @@ int Sign(const char 	*keyFileName,
 {
     int		rc = 0;
     int		valid = FALSE; /* true if signature verifies */
+    enum SignMode signMode = SIGN_PKCS_1_1; /* hardcode to PKCS 1.1 padding */
 
     /*
       signing key
@@ -185,14 +183,14 @@ int Sign(const char 	*keyFileName,
     size_t 		digestLength = 0;      /* received digest length */
 
     /* http://tools.ietf.org/html/draft-ietf-smime-sha2-11 */
-    /* SHA-512 with RSA OID (Object Identifier) */
-    static const unsigned char sha512_rsa_oid[] = {0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86,
-                                                   0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05,
-                                                   0x00, 0x04, 0x40};
+    /* SHA-256 with RSA OID (Object Identifier) */
+    static const unsigned char sha256_rsa_oid[] = {0x30, 0x31, 0x30, 0x0D, 0x06, 0x09, 0x60, 0x86,
+	                                               0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05,
+	                                               0x00, 0x04, 0x20};
     /*
       digest to be signed
     */
-    unsigned char 	hash512[sizeof(sha512_rsa_oid) + SHA512_SIZE];	/* OID + SHA-512 digest */
+    unsigned char 	hash256[sizeof(sha256_rsa_oid) + SHA256_SIZE];	/* OID + SHA-256 digest */
     /*
       signature
     */
@@ -214,7 +212,7 @@ int Sign(const char 	*keyFileName,
     if (rc == 0) {
         if (verbose) fprintf(messageFile, "Sign: Reading input file %s\n",
                              inputAttachmentFileName);
-        rc = File_ReadBinaryFile(&digest, &digestLength, SHA512_SIZE,
+        rc = File_ReadBinaryFile(&digest, &digestLength, SHA256_SIZE,
                                  inputAttachmentFileName);	/* freed @2 */
         if (rc != 0) {
             File_Printf(projectLogFile, messageFile,
@@ -247,48 +245,35 @@ int Sign(const char 	*keyFileName,
     /* check the incoming digest length */
     if (rc == 0) {
         if (verbose) fprintf(messageFile, "Sign: Checking input file length\n");
-        if (digestLength != SHA512_SIZE) {
+        if (digestLength != SHA256_SIZE) {
             File_Printf(projectLogFile, messageFile,
                         "ERROR1019: attachment length %u not %u\n",
-                        digestLength, SHA512_SIZE);
+                        digestLength, SHA256_SIZE);
             rc = ERROR_CODE;
         }
     }
-    int dataSize = 0;
-    int saltLen = 0;
-    enum SignMode signMode = SIGN_PKCS_1_1;
-    if (rc == 0 && !rsassa_pss_mode) {
+    if (rc == 0) {
         if (verbose) fprintf(messageFile, "Sign: Prepending OID\n");
         /* prepend OID */
-        memcpy(hash512, sha512_rsa_oid, sizeof(sha512_rsa_oid));
+        memcpy(hash256, sha256_rsa_oid, sizeof(sha256_rsa_oid));
         /* append digest */
-        memcpy(hash512 + sizeof(sha512_rsa_oid), digest, SHA512_SIZE);
-        dataSize = sizeof(sha512_rsa_oid) + SHA512_SIZE;
-    } else if (rc == 0 && rsassa_pss_mode) {
-        /* RSASSA-PSS signature scheme passes <4 byte salt length>|<hash> to CCA */
-        /* Use the hash size for the salt length */
-        saltLen = htobe32(SHA512_SIZE);
-        memcpy(hash512, &saltLen, 4);
-        memcpy(hash512+4, digest, SHA512_SIZE);
-        dataSize = SHA512_SIZE+4;
-        signMode = SIGN_PKCS_PSS;
+        memcpy(hash256 + sizeof(sha256_rsa_oid), digest, SHA256_SIZE);
     }
-
     /* sign with the coprocessor.  The coprocessor doesn't know the digest algorithm.  It just
        signs an OID + digest1 */
     if (rc == 0) {
         if (verbose) PrintAll(messageFile,
                               "Sign: hash to sign",
-                              sizeof(sha512_rsa_oid) + SHA512_SIZE,
-                              hash512);
+                              sizeof(sha256_rsa_oid) + SHA256_SIZE,
+                              hash256);
         signatureLength = MOD_SIZE;
         rc = Digital_Signature_Generate(&signatureLength,		/* i/o */
                                         &signatureBitLength,		/* output */
                                         signature,			/* output */
                                         keyTokenLength,			/* input */
                                         keyToken,			/* input */
-                                        dataSize,           /* input */
-                                        hash512,            /* input */
+                                        sizeof(sha256_rsa_oid) + SHA256_SIZE, /* input */
+                                        hash256,            /* input */
                                         signMode);          /* input */
 
     }
@@ -297,13 +282,13 @@ int Sign(const char 	*keyFileName,
         if (verbose) fprintf(messageFile, "Sign: Updating audit log\n");
         /* binary data as printable */
         char pubkey_string[N_SIZE_MAX * 4];
-        char digest_string[SHA512_SIZE * 4];
+        char digest_string[SHA256_SIZE * 4];
         char sig_string[N_SIZE_MAX * 4];
 
         /* get the user and group structures */
         /* binary to printable */
         sprintAll(pubkey_string, MOD_SIZE, rsaKeyTokenPublic.n);
-        sprintAll(digest_string, SHA512_SIZE, digest);
+        sprintAll(digest_string, SHA256_SIZE, digest);
         sprintAll(sig_string, MOD_SIZE, signature);
         /* send to audit log */
         fprintf(projectLogFile, "\tPublic Key:\n %s\n", pubkey_string);
@@ -329,15 +314,15 @@ int Sign(const char 	*keyFileName,
                                       signature,		/* input signature */
                                       keyTokenLength,		/* input */
                                       keyToken,			/* input key */
-                                      dataSize,         /* input */
-                                      hash512,			/* input hash */
+                                      sizeof(sha256_rsa_oid) + SHA256_SIZE,	/* input */
+                                      hash256,			/* input hash */
                                       signMode);
     }
     /* code to verify the signature using openssl */
-    if (rc == 0 && SIGN_PKCS_1_1 == signMode) {
+    if (rc == 0) {
         if (verbose) fprintf(messageFile,
                              "Sign: verify signature with OpenSSL and the key token\n");
-        rc = osslVerify512(&valid,
+        rc = osslVerify256(&valid,
                            digest,			/* input: digest to be verified */
                            rsaKeyTokenPublic.e,		/* exponent */
                            rsaKeyTokenPublic.eLength,
@@ -396,7 +381,6 @@ int GetArgs(const char **outputBodyFilename,
             unsigned int *bitSize,
             int *text,
             int *verbose,
-            int * rsassa_pss,
             int argc,
             char **argv)
 {
@@ -409,7 +393,6 @@ int GetArgs(const char **outputBodyFilename,
     *outputBodyFilename = NULL;
     *text = FALSE;
     *verbose = FALSE;
-    *rsassa_pss = FALSE;
 
     /* get the command line arguments */
     for (i = 1 ; (i < argc) && (rc == 0) ; i++) {
@@ -540,9 +523,6 @@ int GetArgs(const char **outputBodyFilename,
         else if (strcmp(argv[i],"-v") == 0) {
             *verbose = TRUE;
         }
-        else if (strcmp(argv[i], "-rsassa-pss") == 0) {
-            *rsassa_pss = TRUE;
-        }
         /* This code intentionally does not have an 'else error' clause.  The framework can in
            general add command line arguments that are ignored by the project specific program. */
     }
@@ -618,7 +598,7 @@ void PrintUsage()
 {
     fprintf(messageFile, "\n");
     fprintf(messageFile,
-            "\tsign_sha512 usage:\n"
+            "\tsign_sha256 usage:\n"
             "\n"
             "Common arguments:\n"
             "\n"
@@ -643,7 +623,6 @@ void PrintUsage()
             "\t-pwd        - CCA user password (plaintext)\n"
             "\n"
             "Project configuration optional arguments:\n"
-            "\t-rsassa-pss - Use RSASSA-PSS signature scheme instead of default PKCS1.1\n"
             "\t-sz <bitsize> - RSA key size\n"
             );
     fprintf(messageFile, "\n");
