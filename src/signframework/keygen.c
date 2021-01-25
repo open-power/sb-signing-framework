@@ -59,7 +59,7 @@ int main(int argc, char** argv)
     const char	*pubKeyFilename;	/* destination file for the generated public key */
     const char	*userName;		/* optional user name */
     const char 	*password;		/* optional user password */
-    unsigned int bitSize = 2048;	/* default RSA key size */
+    unsigned int bitSize = 4096;	/* default RSA key size */
     int encrypt = FALSE;		/* default is signing key */
     int rsaaesc = FALSE;        /* default is RSA-CRT format token */
 
@@ -275,7 +275,7 @@ void printUsage()
     printf("\n");
     printf("Example: keygen -k key.tok -p pub.bin -u user password \n");
     printf("\n");
-    printf("Generates an RSA 2048-bit signing key token using CCA, and stores the\n"
+    printf("Generates an RSA 4096-bit signing key token using CCA, and stores the\n"
            "resulting key pair token in the key token file.  The public key modulus\n"
            "n is stored in binary in the public key token file.\n"
            "\n"
@@ -286,7 +286,7 @@ void printUsage()
     printf("\t-k key token file name\n");
     printf("\t-p public key modulus file name\n");
     printf("\t-u user name and password\n");
-    printf("\t-sz bit size (default 2048)\n");
+    printf("\t-sz bit size (default 4096)\n");
     printf("\t-enc (can be used as a encryption key, default signing only)\n");
     printf("\t-aesc Format as an RSA-AESC token, required for RSA-PSS signing (default RSA-CRT)\n");
     printf("\t-h help\n");
