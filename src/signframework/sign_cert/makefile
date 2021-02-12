@@ -43,34 +43,6 @@ sign_cert:	sign_cert.o \
 		cca_functions.o cca_structures.o ossl_functions.o ossl_certificate.o utils.o debug.o \
 		-o sign_cert
 
-# create links from common programs in FRAMEWORK_DIR
-
-FRAMEWORK_DIR = ..
-
-cca_functions.c:
-	ln -s $(FRAMEWORK_DIR)/cca_functions.c .
-cca_functions.h:
-	ln -s $(FRAMEWORK_DIR)/cca_functions.h .
-cca_structures.c:
-	ln -s $(FRAMEWORK_DIR)/cca_structures.c .
-cca_structures.h:
-	ln -s $(FRAMEWORK_DIR)/cca_structures.h .
-debug.c:
-	ln -s $(FRAMEWORK_DIR)/debug.c .
-debug.h:
-	ln -s $(FRAMEWORK_DIR)/debug.h .
-ossl_functions.c:
-	ln -s $(FRAMEWORK_DIR)/ossl_functions.c .
-ossl_functions.h:
-	ln -s $(FRAMEWORK_DIR)/ossl_functions.h .
-ossl_certificate.c:
-	ln -s $(FRAMEWORK_DIR)/ossl_certificate.c .
-ossl_certificate.h:
-	ln -s $(FRAMEWORK_DIR)/ossl_certificate.h .
-utils.c:
-	ln -s $(FRAMEWORK_DIR)/utils.c .
-utils.h:
-	ln -s $(FRAMEWORK_DIR)/utils.h .
 
 sign_cert.o:			$(HEADERS)
 cca_functions.o:		$(HEADERS)
