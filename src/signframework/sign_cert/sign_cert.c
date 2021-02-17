@@ -1,20 +1,19 @@
-/********************************************************************************/
-/*										*/
-/*			  	Sign Certificate				*/
-/*			     Written by Ken Goldman				*/
-/*		       IBM Thomas J. Watson Research Center			*/
-/*	      $Id: sign_cert.c 433 2014-03-05 21:58:40Z kgoldman $		*/
-/*										*/
-/*			       IBM Confidential					*/
-/*			     OCO Source Materials				*/
-/*			 (c) Copyright IBM Corp. 2013				*/
-/*			      All Rights Reserved			        */
-/*										*/
-/*	   The source code for this program is not published or otherwise	*/
-/*	   divested of its trade secrets, irrespective of what has been		*/
-/*	   deposited with the U.S. Copyright Office.				*/
-/*										*/
-/********************************************************************************/
+/* Copyright 2021 IBM Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 
 /* This program creates and signs a certificate.
 
@@ -580,7 +579,7 @@ int Sign(unsigned char		**signature,		/* output, freed by caller */
     }
     /* extract the signing CCA public key from the CCA signing key token  */
     if (rc == 0) {
-	if (verbose) fprintf(messageFile, "Sign: key token length %u\n", (int)keyTokenLength);
+	if (verbose) fprintf(messageFile, "Sign: key token length %lu\n", keyTokenLength);
 	if (verbose)
 	    fprintf(messageFile, "Sign: extract the public key from CCA key token\n");
 	rc = getPKA96PublicKey(rsaKeyTokenPublic,	/* output: structure */
@@ -720,7 +719,7 @@ int TestSign(unsigned char	**signature,		/* output, freed by caller */
     }
     /* extract the CCA signing public key from the CCA signing key token  */
     if (rc == 0) {
-	if (verbose) fprintf(messageFile, "TestSign: key token length %u\n", (int)keyTokenLength);
+	if (verbose) fprintf(messageFile, "TestSign: key token length %lu\n", keyTokenLength);
 	if (verbose)
 	    fprintf(messageFile, "TestSign: extract the public key from CCA key token\n");
 	rc = getPKA96PublicKey(&rsaKeyTokenPublic,	/* output: structure */
@@ -749,8 +748,8 @@ int TestSign(unsigned char	**signature,		/* output, freed by caller */
     /* prepend OID, set digest to zeros (test value) */
     if (rc == 0) {
 	if (verbose) fprintf(messageFile,
-			     "Ossl_Cert_GetDigest: Prepending OID, length %u\n",
-			     (int)sizeof(sha1_rsa_oid));
+			     "Ossl_Cert_GetDigest: Prepending OID, length %lu\n",
+			     sizeof(sha1_rsa_oid));
 	memset(*digest, 0, oidDigestLength);
 	memcpy(*digest, sha1_rsa_oid, sizeof(sha1_rsa_oid));
     }

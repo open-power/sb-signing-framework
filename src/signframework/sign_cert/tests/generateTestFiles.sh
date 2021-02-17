@@ -1,18 +1,19 @@
 #!/bin/bash
 #
-#			sign_cert Regression Test
-#			     Written by Ken Goldman ported by Nick Child (2021)
-#		       IBM Thomas J. Watson Research Center
-#	      $Id: regression.sh 433 2014-03-05 21:58:40Z kgoldman $
+# Copyright 2017 IBM Corp.
 #
-#			       IBM Confidential
-#			     OCO Source Materials
-#			 (c) Copyright IBM Corp. 2013
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#	   The source code for this program is not published or otherwise
-#	   divested of its trade secrets, irrespective of what has been
-#	   deposited with the U.S. Copyright Office
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # Run this script locally
 
@@ -64,8 +65,6 @@ date
 echo ""
 echo "Generating Projects..."
 echo ""
-
-#sign_cert -project issuer_root -usr t -pwd aaaaaa -log regression.log -auxcfg issuer_root_sample_aux.cfg -sender "Kenneth Goldman/Watson/IBM" -certify_project issuer_root -key issuer_root.tok -do certroot.der  
 
 #generate cfg and add to projects
 #$1 sed find/replace string
