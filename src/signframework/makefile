@@ -35,6 +35,7 @@ all:    framework framework_test frameworkkey_generate keygen password_generate 
 	(cd sign_sha512 && make)
 	(cd signecc && make)
 	(cd sign_rsa_raw && make)
+	(cd sign_cert && make)
 #all:		ccatest  
 #		signature_verify \
 #		audit_archive t
