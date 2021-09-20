@@ -966,8 +966,12 @@ void Arguments_ClearSecret(const char 	*flag,
         irc = strcmp(arguments->argv[i], flag);
         if (irc == 0) {		/* found a flag match */
             i++;		/* advance past the flag to the value */
-            length = strlen(arguments->argv[i]);
-            memset(arguments->argv[i], '\0', length);
+            /* In some error cases the -pwd arg may exist but the companion doesn't */
+            if (NULL != arguments->argv[i])
+            {
+                length = strlen(arguments->argv[i]);
+                memset(arguments->argv[i], '\0', length);
+            }
         }
     }
     return;
