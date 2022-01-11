@@ -18,4 +18,5 @@ sf_pkcs11_lib = shared_library(
     'src/pkcs11-sf-statics.cpp',
     include_directories : 'include',
     dependencies: sf_pkcs11_deps,
+    install: get_option('lib-pkcs11')
 )
