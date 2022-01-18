@@ -60,7 +60,7 @@ struct option create_long_options[NumOptOptions + 1] =
 {
     // Required
     {"project",  required_argument, NULL, 'p'},
-    {"comment",  required_argument, NULL, 'c'},
+    {"comments", required_argument, NULL, 'c'},
     {"epwd",     required_argument, NULL, 'e'},
     {"url",      required_argument, NULL, 'u'},
     {"pkey",     required_argument, NULL, 'k'},
