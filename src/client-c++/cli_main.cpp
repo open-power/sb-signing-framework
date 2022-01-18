@@ -143,7 +143,7 @@ bool ParseArgs(const int argcParm, char** argvParm, SfClientArgs& argsParm)
 
         if(-1 == sOption)
         {
-            return false;
+            break;
         }
         else if(sOption == create_long_options[Project].val)
         {
@@ -200,7 +200,8 @@ bool ParseArgs(const int argcParm, char** argvParm, SfClientArgs& argsParm)
             argsParm.mDebug = true;
         }
     }
-    return sNumRequiredArgsFound == NumRequiredArgs;
+
+    return true;
 }
 
 void PrintHelp(const std::string& programNameParm)
@@ -372,6 +373,10 @@ int main(int argc, char** argv)
             }
         }
         sIsSuccess = sf_client::success == sRc;
+        if(!sIsSuccess)
+        {
+            std::cout << "Unable to connect to server, rc = " << sRc << std::endl;
+        }
     }
 
     if(sIsSuccess)
