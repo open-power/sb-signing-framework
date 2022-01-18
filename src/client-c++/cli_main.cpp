@@ -29,7 +29,7 @@
 
 enum OptOptions
 {
-    // Requried Args (must be grouped first for dynamic help text)
+    // Required Args (must be grouped first for dynamic help text)
     Project,
     Comment,
     Epwd,
@@ -271,8 +271,6 @@ int main(int argc, char** argv)
     {
         Verbose_PrintArgs(sArgs);
     }
-
-    sIsSuccess = true;
 
     if(!sIsSuccess)
     {
