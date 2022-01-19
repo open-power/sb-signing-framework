@@ -1,0 +1,2 @@
+
+option('lib-pkcs11', type : 'boolean', value : false)

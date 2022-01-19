@@ -1,0 +1,10 @@
+{
+        "editor.formatOnSave": true,
+        "editor.formatOnSaveMode": "file",
+        "editor.tabSize": 4,
+        "editor.useTabStops": false,
+        "files.associations": {
+                "*.cpp": "cpp",
+        },
+        "C_Cpp.errorSquiggles": "Disabled"
+}
