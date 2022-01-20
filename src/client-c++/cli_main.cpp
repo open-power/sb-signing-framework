@@ -44,6 +44,7 @@ enum OptOptions
     ServerStdOut,
     Verbose,
     Debug,
+    Help,
 
     NumOptOptions
 };
@@ -72,6 +73,7 @@ struct option create_long_options[NumOptOptions + 1] =
     {"stdout",   no_argument,       NULL, 's'},
     {"verbose",  no_argument,       NULL, 'v'},
     {"debug",    no_argument,       NULL, 'd'},
+    {"help",     no_argument,       NULL, 'h'},
     {0, 0, 0, 0}
 };
 
@@ -90,7 +92,8 @@ const std::string OptOptionsHelpText[NumOptOptions] =
     "output file to save the return payload",
     "Displays the stdout from the server",
     "verbose tracing",
-    "debug mode - files will not be deleted"
+    "debug mode - files will not be deleted",
+    "Display help text",
 };
 // clang-format on
 
@@ -114,6 +117,7 @@ struct SfClientArgs
     bool        mServerStdOut;
     bool        mVerbose;
     bool        mDebug;
+    bool        mHelp;
 };
 
 bool ParseArgs(const int argcParm, char** argvParm, SfClientArgs& argsParm)
@@ -199,6 +203,10 @@ bool ParseArgs(const int argcParm, char** argvParm, SfClientArgs& argsParm)
         {
             argsParm.mDebug = true;
         }
+        else if(sOption == create_long_options[Help].val)
+        {
+            argsParm.mHelp = true;
+        }
     }
 
     return true;
@@ -273,7 +281,7 @@ int main(int argc, char** argv)
         Verbose_PrintArgs(sArgs);
     }
 
-    if(!sIsSuccess)
+    if(!sIsSuccess || sArgs.mHelp)
     {
         PrintHelp(sProgramName);
         return -1; // Early return for simplicity
