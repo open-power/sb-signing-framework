@@ -97,15 +97,7 @@ struct pscp_sftp_session*  startSftpSession(const char * sftp_url, const char * 
     }
 
     if(status == CURLE_OK) status = curl_easy_setopt(sftp->curl, CURLOPT_PROTOCOLS, CURLPROTO_SFTP);
-    if(status == CURLE_OK) status = curl_easy_setopt(sftp->curl, CURLOPT_SSH_PRIVATE_KEYFILE, privateKeyPath);
 
-    if(status == CURLE_OK)
-    {
-        // Workaround for RedHat bug 1260742 - curl requiring public key
-        char pubKeyPath[PATH_MAX];
-        snprintf(pubKeyPath, PATH_MAX, "%s.pub", privateKeyPath);
-        status = curl_easy_setopt(sftp->curl, CURLOPT_SSH_PUBLIC_KEYFILE, pubKeyPath);
-    }
     if(status == CURLE_OK)
     {
         status = curl_easy_setopt(sftp->curl, CURLOPT_URL, sftp_url);
@@ -123,8 +115,20 @@ struct pscp_sftp_session*  startSftpSession(const char * sftp_url, const char * 
             bzero(passphrase, PSCP_PKEY_PASSPHRASE_MAX);
 
             // Try the first connect without a password, if we detect the ssh-agent
-            //  Otherwise prompt for PW
-            if (0 != retry || NULL == getenv("SSH_AGENT_PID")) {
+            //  Otherwise add the keyfile to the connection and prompt for PW
+            if (0 != retry ||
+                (NULL == getenv("SSH_AGENT_PID") && NULL == getenv("SSH_AUTH_SOCK"))
+                ) {
+                if(status == CURLE_OK) status = curl_easy_setopt(sftp->curl, CURLOPT_SSH_PRIVATE_KEYFILE, privateKeyPath);
+                if(status == CURLE_OK)
+                {
+                    // Workaround for RedHat bug 1260742 - curl requiring public key
+                    char pubKeyPath[PATH_MAX];
+                    snprintf(pubKeyPath, PATH_MAX, "%s.pub", privateKeyPath);
+                }
+
+
+
                 status = GetPassword(passphrase, PSCP_PKEY_PASSPHRASE_MAX, verbose);
                 if(status != 0)
                 {
