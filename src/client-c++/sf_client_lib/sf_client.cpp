@@ -82,7 +82,8 @@ sf_client::rc sf_client::connectToServer(const ServerInfoV1& serverParm, Session
     {
         return failure;
     }
-    else if(!PrivateKeyEncrypted(serverParm.mPrivateKeyPath))
+    else if(0 != serverParm.mPrivateKeyPath.length() &&
+            !PrivateKeyEncrypted(serverParm.mPrivateKeyPath))
     {
         return pkey_not_encrypted;
     }
@@ -90,7 +91,8 @@ sf_client::rc sf_client::connectToServer(const ServerInfoV1& serverParm, Session
     Curl_ServerInfo sServerInfo;
     sServerInfo.mUrl            = serverParm.mUrl;
     sServerInfo.mPrivateKeyPath = serverParm.mPrivateKeyPath;
-    sServerInfo.mPublicKeyPath  = serverParm.mPrivateKeyPath + ".pub";
+    if (0 != sServerInfo.mPrivateKeyPath.length())
+        sServerInfo.mPublicKeyPath  = serverParm.mPrivateKeyPath + ".pub";
     sServerInfo.mPasswordPtr    = serverParm.mPasswordPtr;
     sServerInfo.mEpwdPath       = serverParm.mEpwdPath;
     sServerInfo.mVerbose        = serverParm.mVerbose;
