@@ -2,6 +2,8 @@ project(
     'client-c++',
     'cpp',
     default_options: [
+        'cpp_std=c++11',
+        'c_std=c11',
         'werror=true',
         'warning_level=3',
     ],
@@ -12,7 +14,10 @@ cc = meson.get_compiler('cpp')
 
 subdir('sf_utils')
 subdir('sf_client_lib')
-subdir('sf_pkcs11')
+
+if get_option('lib-pkcs11') == true
+  subdir('sf_pkcs11')
+endif
 
 executable(
     'sf_client',
