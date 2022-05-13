@@ -103,6 +103,7 @@ struct SfClientArgs
     : mServerStdOut(false)
     , mVerbose(false)
     , mDebug(false)
+    , mHelp(false)
     {
     }
     std::string mProject;
@@ -222,6 +223,7 @@ void PrintHelp(const std::string& programNameParm)
     }
 
     std::cout << "Usage: " << programNameParm << std::endl;
+    std::cout << "Version: C++" << std::endl;
     std::cout << "Required:" << std::endl;
     for(std::size_t sIdx = 0; sIdx < NumOptOptions; sIdx++)
     {
@@ -353,7 +355,7 @@ int main(int argc, char** argv)
                 {
                     sNumAttempts++;
 
-                    std::size_t sPasswordLength = 0;
+                    uint64_t sPasswordLength = 0;
 
                     const bool sResult = GetPassword(
                         sPasswordPtr, MaxPasswordSize, sPasswordLength, sArgs.mVerbose);
