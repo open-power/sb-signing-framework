@@ -361,7 +361,7 @@ int main(int argc, char** argv)
             {
                 sNumAttempts++;
 
-                std::size_t sPasswordLength = 0;
+                uint64_t sPasswordLength = 0;
 
                 const bool sResult = GetPassword(
                                                  sPasswordPtr, MaxPasswordSize, sPasswordLength, sArgs.mVerbose);
