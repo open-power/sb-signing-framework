@@ -91,8 +91,11 @@ sf_client::rc sf_client::connectToServer(const ServerInfoV1& serverParm, Session
     Curl_ServerInfo sServerInfo;
     sServerInfo.mUrl            = serverParm.mUrl;
     sServerInfo.mPrivateKeyPath = serverParm.mPrivateKeyPath;
-    if (0 != sServerInfo.mPrivateKeyPath.length())
+    if (0 != sServerInfo.mPrivateKeyPath.length()) {
         sServerInfo.mPublicKeyPath  = serverParm.mPrivateKeyPath + ".pub";
+    } else {
+        sServerInfo.mPublicKeyPath.clear();
+    }
     sServerInfo.mPasswordPtr    = serverParm.mPasswordPtr;
     sServerInfo.mEpwdPath       = serverParm.mEpwdPath;
     sServerInfo.mVerbose        = serverParm.mVerbose;
