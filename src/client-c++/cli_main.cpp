@@ -269,7 +269,6 @@ int main(int argc, char** argv)
 {
     std::string sProgramName = argv[0];
     bool        sIsSuccess   = true;
-    bool        sIsConnected = false;
 
     sf_client::ServerInfoV1      sSfServerV1;
     sf_client::CommandArgsV1     sSfArgsV1;
@@ -317,81 +316,96 @@ int main(int argc, char** argv)
         sSfArgsV1.mExtraServerParms = sArgs.mExtraServerParms;
     }
 
-    if(sIsSuccess &&
-       (NULL != getenv("SSH_AUTH_SOCK") ||
-        NULL != getenv("SSH_AGENT_PID")) )
+    if(sIsSuccess && !sArgs.mPasswordEnvVar.empty())
     {
-        sf_client::rc sRc        = sf_client::failure;
-        // Attempt a connection without providing a password. If the key is registered in an agent
-        // then the connection will work without needing user interaction.
-        sRc = sf_client::connectToServer(sSfServerV1, sSession);
-
-        sIsConnected = (sf_client::success == sRc);
-    }
-
-    // Provide private key to any other connection attempts
-    sSfServerV1.mPrivateKeyPath = sArgs.mPrivateKeyPath;
-
-    if(sIsSuccess && !sIsConnected && !sArgs.mPasswordEnvVar.empty())
-    {
+        std::cout << "Attempting connection with password provided by ENV" << std::endl;
+        sSfServerV1.mPrivateKeyPath = sArgs.mPrivateKeyPath;
         sSfServerV1.mPasswordPtr = getenv(sArgs.mPasswordEnvVar.c_str());
         sf_client::rc sRc        = sf_client::connectToServer(sSfServerV1, sSession);
         sIsSuccess               = sf_client::success == sRc;
         // The password was provided in the environment. If it is wrong there is nothing else to be
         // done.
-    }
-    else if(sIsSuccess && !sIsConnected)
-    {
 
-        sf_client::rc sRc = sf_client::success;
-
-        char* sPasswordPtr = (char*)OPENSSL_malloc(MaxPasswordSize);
-        if(sPasswordPtr)
-            memset(sPasswordPtr, 0, MaxPasswordSize);
-
-        if(!sPasswordPtr)
-        {
-            std::cerr << "Unable to allocate memory for password buffer" << std::endl;
-            sIsSuccess = false;
-        }
-        else
-        {
-            std::size_t sNumAttempts = 0;
-            do
-            {
-                sNumAttempts++;
-
-                uint64_t sPasswordLength = 0;
-
-                const bool sResult = GetPassword(
-                                                 sPasswordPtr, MaxPasswordSize, sPasswordLength, sArgs.mVerbose);
-
-                if(sArgs.mVerbose)
-                {
-                    std::cout << "GetPassword Result: " << (sResult ? "true" : "false")
-                              << std::endl;
-                }
-
-                if(sResult)
-                {
-                    sSfServerV1.mPasswordPtr = sPasswordPtr;
-                    sRc = sf_client::connectToServer(sSfServerV1, sSession);
-                }
-
-                if(sArgs.mVerbose)
-                {
-                    std::cout << "Finishing Attempt #" << sNumAttempts << std::endl;
-                }
-            } while(sf_client::password_retry == sRc && sNumAttempts < MaxPasswordAttempts);
-
-            memset(sPasswordPtr, 0, MaxPasswordSize);
-            OPENSSL_free(sPasswordPtr);
-
-            sIsSuccess = (sf_client::success == sRc);
-        }
         if(!sIsSuccess)
         {
             std::cout << "Unable to connect to server, rc = " << sRc << std::endl;
+        }
+    }
+    else if(sIsSuccess)
+    {
+        bool        sIsConnected = false;
+        if(!sIsConnected &&
+           (NULL != getenv("SSH_AUTH_SOCK") ||
+            NULL != getenv("SSH_AGENT_PID")) )
+        {
+            std::cout << "Attempting connection with ssh-agent" << std::endl;
+            sf_client::rc sRc        = sf_client::failure;
+            // Attempt a connection without providing a password. If the key is registered in an agent
+            // then the connection will work without needing user interaction.
+            sRc = sf_client::connectToServer(sSfServerV1, sSession);
+
+            sIsConnected = (sf_client::success == sRc);
+
+        }
+
+
+        // No ssh-agent or registered credentials, we will now prompt for a PW
+        if(!sIsConnected)
+        {
+            std::cout << "Running with prompt" << std::endl;
+
+            // Provide private key to any other connection attempts
+            sSfServerV1.mPrivateKeyPath = sArgs.mPrivateKeyPath;
+            sf_client::rc sRc = sf_client::success;
+
+            char* sPasswordPtr = (char*)OPENSSL_malloc(MaxPasswordSize);
+            if(sPasswordPtr)
+                memset(sPasswordPtr, 0, MaxPasswordSize);
+
+            if(!sPasswordPtr)
+            {
+                std::cerr << "Unable to allocate memory for password buffer" << std::endl;
+                sIsSuccess = false;
+            }
+            else
+            {
+                std::size_t sNumAttempts = 0;
+                do
+                {
+                    sNumAttempts++;
+
+                    uint64_t sPasswordLength = 0;
+
+                    const bool sResult = GetPassword(
+                                                     sPasswordPtr, MaxPasswordSize, sPasswordLength, sArgs.mVerbose);
+
+                    if(sArgs.mVerbose)
+                    {
+                        std::cout << "GetPassword Result: " << (sResult ? "true" : "false")
+                                  << std::endl;
+                    }
+
+                    if(sResult)
+                    {
+                        sSfServerV1.mPasswordPtr = sPasswordPtr;
+                        sRc = sf_client::connectToServer(sSfServerV1, sSession);
+                    }
+
+                    if(sArgs.mVerbose)
+                    {
+                        std::cout << "Finishing Attempt #" << sNumAttempts << std::endl;
+                    }
+                } while(sf_client::password_retry == sRc && sNumAttempts < MaxPasswordAttempts);
+
+                memset(sPasswordPtr, 0, MaxPasswordSize);
+                OPENSSL_free(sPasswordPtr);
+
+                sIsSuccess = (sf_client::success == sRc);
+            }
+            if(!sIsSuccess)
+            {
+                std::cout << "Unable to connect to server, rc = " << sRc << std::endl;
+            }
         }
     }
 
