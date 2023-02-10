@@ -2,6 +2,7 @@
 *~
 src/client/sf_client
 src/client/sftp-test
+src/client-c++/sf_client
 src/signframework/audit
 src/signframework/audit_archive
 src/signframework/framework
