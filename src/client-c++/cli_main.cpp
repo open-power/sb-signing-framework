@@ -412,7 +412,11 @@ int main(int argc, char** argv)
     if(sIsSuccess)
     {
         sf_client::rc sRc = sf_client::sendCommandV1(sSession, sSfArgsV1, sSfResponseV1);
-        sIsSuccess        = sf_client::success == sRc;
+        if(sf_client::success != sRc)
+        {
+           sIsSuccess = false;
+           std::cout << "Send Command Failed with rc: " << (int)sRc << std::endl;
+        }
     }
 
     if(sIsSuccess)
@@ -441,6 +445,8 @@ int main(int argc, char** argv)
 
     if(sIsSuccess)
         std::cout << "DONE" << std::endl;
+    else
+        std::cout << "FAILED" << std::endl;
 
     return sIsSuccess ? 0 : -1;
 }
