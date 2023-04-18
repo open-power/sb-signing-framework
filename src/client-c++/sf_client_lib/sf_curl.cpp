@@ -325,8 +325,13 @@ sf_client::rc sf_client::sendAndReceiveCommand(Curl_Session&      curlSessionPar
     std::size_t sNumPolls = 0;
     do
     {
-        sleep(1);
         sNumPolls++;
+
+        if(CURLE_REMOTE_FILE_NOT_FOUND == sRc)
+        {
+            // Reset the return code so that READ_FROM_SERVER will execute
+            sRc = CURLE_OK;
+        }
 
         std::string sResponseGo;
         READ_FROM_SERVER(sRc, curlSessionParm, sSessionFileNames.mResponseFileGo, sResponseGo);
