@@ -601,8 +601,7 @@ int main(int argc, char** argv)
         if(0 != sSfResponseV1.mReturnCode)
         {
             std::cerr << "Signing server responded with failure: " << sSfResponseV1.mReturnCode
-                      << std::endl
-                      << "Rerun with -stdout to see server output" << std::endl;
+                      << std::endl;
         }
 
         if(!sArgs.mOutputPath.empty())
@@ -616,5 +615,5 @@ int main(int argc, char** argv)
     else
         std::cout << "FAILED" << std::endl;
 
-    return sIsSuccess ? 0 : -1;
+    return (sIsSuccess) ? sSfResponseV1.mReturnCode : -1;
 }
