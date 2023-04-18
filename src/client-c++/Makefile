@@ -1,4 +1,10 @@
-CFLAGS=-std=c++11 -Wall -Wextra
+ifeq ($(shell uname),AIX)
+	CFLAGS=-O2 -DNO_GETOPT_LONG -I/opt/freeware/include
+	CXX=xlC
+else
+	CFLAGS=-O2 -Wall -Wextra
+	CXX=g++
+endif
 
 all: sf_client
 

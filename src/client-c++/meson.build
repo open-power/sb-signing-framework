@@ -10,6 +10,10 @@ project(
     version: '1.0'
 )
 
+if get_option('getopt_long') == false
+  add_global_arguments('-DNO_GETOPT_LONG', language: 'cpp')
+endif
+
 cc = meson.get_compiler('cpp')
 
 subdir('sf_utils')

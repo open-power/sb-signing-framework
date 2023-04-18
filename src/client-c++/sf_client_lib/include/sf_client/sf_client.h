@@ -46,6 +46,21 @@ namespace sf_client
         bool        mCurlDebug;
     };
 
+    struct CommandArgsV2
+    {
+        CommandArgsV2()
+        : mPasswordPtr(NULL)
+        {
+        }
+        std::string          mMode;
+        std::string          mProject;
+        std::string          mComment;
+        std::string          mExtraServerParms;
+        std::vector<uint8_t> mPayload;
+        char*                mPasswordPtr; // c_str (null-terminated)
+    };
+    typedef CommandResponseV1 CommandResponseV2;
+
     struct Session
     {
         Session();
@@ -61,6 +76,10 @@ namespace sf_client
     rc sendCommandV1(Session&             sessionParm,
                      const CommandArgsV1& argsParm,
                      CommandResponseV1&   responseParm);
+
+    rc sendCommandV2(Session&             sessionParm,
+                     const CommandArgsV2& argsParm,
+                     CommandResponseV2&   responseParm);
 } // namespace sf_client
 
 #endif

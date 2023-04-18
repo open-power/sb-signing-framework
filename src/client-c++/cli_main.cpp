@@ -13,23 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <algorithm>
 #include <csignal>
 #include <cstdio>
 #include <cstring> // strlen
 #include <fstream>
-#include <getopt.h>
 #include <iostream>
 #include <openssl/crypto.h> // Used for OpenSSL_malloc
 #include <sf_utils/sf_utils.h>
 #include <string>
 #include <termios.h>
+#include <unistd.h>
 #include <vector>
+
+#ifndef NO_GETOPT_LONG
+#include <getopt.h>
+#else
+struct option
+{
+    const char* name;
+    int         has_arg;
+    int*        flag;
+    int         val;
+};
+enum
+{
+    required_argument = 1,
+    no_argument       = 0,
+};
+#endif
 
 #include <sf_client/sf_client.h>
 
 enum OptOptions
 {
     // Required Args (must be grouped first for dynamic help text)
+    Mode,
     Project,
     Comment,
     Epwd,
@@ -41,7 +60,6 @@ enum OptOptions
     PasswordEnvVar,
     Param,
     Output,
-    ServerStdOut,
     Verbose,
     Debug,
     Help,
@@ -51,7 +69,6 @@ enum OptOptions
 
 enum
 {
-    NumRequiredArgs     = 6,
     MaxPasswordSize     = 1024,
     MaxPasswordAttempts = 3,
 };
@@ -59,18 +76,16 @@ enum
 // clang-format off
 struct option create_long_options[NumOptOptions + 1] =
 {
-    // Required
+    {"mode",     required_argument, NULL, 'm'},
     {"project",  required_argument, NULL, 'p'},
     {"comments", required_argument, NULL, 'c'},
     {"epwd",     required_argument, NULL, 'e'},
     {"url",      required_argument, NULL, 'u'},
     {"pkey",     required_argument, NULL, 'k'},
     {"payload",  required_argument, NULL, 'i'},
-    // Optional
     {"password", required_argument, NULL, 'a'},
     {"param",    required_argument, NULL, 'r'},
     {"output",   required_argument, NULL, 'o'},
-    {"stdout",   no_argument,       NULL, 's'},
     {"verbose",  no_argument,       NULL, 'v'},
     {"debug",    no_argument,       NULL, 'd'},
     {"help",     no_argument,       NULL, 'h'},
@@ -80,19 +95,19 @@ struct option create_long_options[NumOptOptions + 1] =
 const std::string OptOptionsHelpText[NumOptOptions] =
 {
     // Required
+    "sign|getpublickey|epwd|log|config|block",
     "Name of the project",
     "Identifier/Message for audit log",
     "File path to the hsm encrypted password",
-    "sftp url. Example: sftp://user@address",
+    "sftp url. Example: sftp://user@address:Port",
     "File path to the *encrypted* private key file",
     "File path to the binary to be signed",
     // Optional
     "Environment variable to read the password from",
     "Parameters to be passed to the signing framework. Ex '-v' or '-h'",
     "output file to save the return payload",
-    "Displays the stdout from the server",
     "verbose tracing",
-    "debug mode - files will not be deleted",
+    "debug mode",
     "Display help text",
 };
 // clang-format on
@@ -100,12 +115,12 @@ const std::string OptOptionsHelpText[NumOptOptions] =
 struct SfClientArgs
 {
     SfClientArgs()
-    : mServerStdOut(false)
-    , mVerbose(false)
+    : mVerbose(false)
     , mDebug(false)
     , mHelp(false)
     {
     }
+    std::string mMode;
     std::string mProject;
     std::string mComment;
     std::string mEpwdPath;
@@ -115,11 +130,109 @@ struct SfClientArgs
     std::string mExtraServerParms;
     std::string mOutputPath;
     std::string mPasswordEnvVar;
-    bool        mServerStdOut;
     bool        mVerbose;
     bool        mDebug;
     bool        mHelp;
 };
+
+struct SfClientArgsRequired
+{
+    bool mProject;
+    bool mComment;
+    bool mEpwdPath;
+    bool mUrl;
+    bool mPrivateKeyPath;
+    bool mPayloadPath;
+    bool mExtraServerParms;
+    bool mOutputPath;
+};
+
+bool CaseInsensitiveCompareChar(char lhs, char rhs)
+{
+    return std::toupper(lhs) == std::toupper(rhs);
+}
+
+bool CaseInsensitiveCompare(const std::string& lhs, const std::string& rhs)
+{
+    if(lhs.size() != rhs.size())
+    {
+        return false;
+    }
+    return std::equal(lhs.begin(), lhs.end(), rhs.begin(), CaseInsensitiveCompareChar);
+}
+
+SfClientArgsRequired GetRequiredArgsForMode(const std::string& modeParm)
+{
+    SfClientArgsRequired sRequired;
+    sRequired.mUrl            = true;
+    sRequired.mPrivateKeyPath = true;
+
+    if(CaseInsensitiveCompare("sign", modeParm))
+    {
+        sRequired.mProject          = true;
+        sRequired.mComment          = true;
+        sRequired.mEpwdPath         = true;
+        sRequired.mPayloadPath      = true;
+        sRequired.mExtraServerParms = false;
+        sRequired.mOutputPath       = true;
+    }
+    else if(CaseInsensitiveCompare("getpublickey", modeParm))
+    {
+        sRequired.mProject          = true;
+        sRequired.mComment          = false;
+        sRequired.mEpwdPath         = false;
+        sRequired.mPayloadPath      = false;
+        sRequired.mExtraServerParms = false;
+        sRequired.mOutputPath       = true;
+    }
+    else if(CaseInsensitiveCompare("epwd", modeParm))
+    {
+        sRequired.mProject          = false;
+        sRequired.mComment          = false;
+        sRequired.mEpwdPath         = false;
+        sRequired.mPayloadPath      = true;
+        sRequired.mExtraServerParms = false;
+        sRequired.mOutputPath       = true;
+    }
+    else if(CaseInsensitiveCompare("log", modeParm))
+    {
+        sRequired.mProject          = true;
+        sRequired.mComment          = false;
+        sRequired.mEpwdPath         = false;
+        sRequired.mPayloadPath      = false;
+        sRequired.mExtraServerParms = false;
+        sRequired.mOutputPath       = true;
+    }
+    else if(CaseInsensitiveCompare("config", modeParm))
+    {
+        sRequired.mProject          = true;
+        sRequired.mComment          = false;
+        sRequired.mEpwdPath         = false;
+        sRequired.mPayloadPath      = false;
+        sRequired.mExtraServerParms = false;
+        sRequired.mOutputPath       = true;
+    }
+    else if(CaseInsensitiveCompare("block", modeParm))
+    {
+        sRequired.mProject          = true;
+        sRequired.mComment          = false;
+        sRequired.mEpwdPath         = false;
+        sRequired.mPayloadPath      = false;
+        sRequired.mExtraServerParms = false;
+        sRequired.mOutputPath       = false;
+    }
+    else
+    {
+        // Unknown mode, defaults to V1 API. Use "signing" mode
+        sRequired.mProject          = true;
+        sRequired.mComment          = true;
+        sRequired.mEpwdPath         = true;
+        sRequired.mPayloadPath      = true;
+        sRequired.mExtraServerParms = false;
+        sRequired.mOutputPath       = true;
+    }
+    return sRequired;
+}
 
 bool ParseArgs(const int argcParm, char** argvParm, SfClientArgs& argsParm)
 {
@@ -135,49 +248,50 @@ bool ParseArgs(const int argcParm, char** argvParm, SfClientArgs& argsParm)
     }
 
     int sOption;
-    int sNumRequiredArgsFound = 0;
     while(1)
     {
-        int sOptionIndex = 0;
 
+#ifdef NO_GETOPT_LONG
+        sOption = getopt(argcParm, argvParm, sShortOptions.c_str());
+#else
+        int sOptionIndex = 0;
         // Use getopt_long_only to enable long options using only a single dash (i.e. -project).
         // This allows scripts using the old sf_client (in C) to use this version without having to
         // be rewritten.
         sOption = getopt_long_only(
             argcParm, argvParm, sShortOptions.c_str(), create_long_options, &sOptionIndex);
+#endif
 
         if(-1 == sOption)
         {
             break;
         }
+        else if(sOption == create_long_options[Mode].val)
+        {
+            argsParm.mMode = optarg;
+        }
         else if(sOption == create_long_options[Project].val)
         {
-            sNumRequiredArgsFound++;
             argsParm.mProject = optarg;
         }
         else if(sOption == create_long_options[Comment].val)
         {
-            sNumRequiredArgsFound++;
             argsParm.mComment = optarg;
         }
         else if(sOption == create_long_options[Epwd].val)
         {
-            sNumRequiredArgsFound++;
             argsParm.mEpwdPath = optarg;
         }
         else if(sOption == create_long_options[Url].val)
         {
-            sNumRequiredArgsFound++;
             argsParm.mUrl = optarg;
         }
         else if(sOption == create_long_options[PrivateKey].val)
         {
-            sNumRequiredArgsFound++;
             argsParm.mPrivateKeyPath = optarg;
         }
         else if(sOption == create_long_options[Payload].val)
         {
-            sNumRequiredArgsFound++;
             argsParm.mPayloadPath = optarg;
         }
         else if(sOption == create_long_options[PasswordEnvVar].val)
@@ -191,10 +305,6 @@ bool ParseArgs(const int argcParm, char** argvParm, SfClientArgs& argsParm)
         else if(sOption == create_long_options[Output].val)
         {
             argsParm.mOutputPath = optarg;
-        }
-        else if(sOption == create_long_options[ServerStdOut].val)
-        {
-            argsParm.mServerStdOut = true;
         }
         else if(sOption == create_long_options[Verbose].val)
         {
@@ -223,15 +333,16 @@ void PrintHelp(const std::string& programNameParm)
     }
 
     std::cout << "Usage: " << programNameParm << std::endl;
+#ifdef NO_GETOPT_LONG
+    std::cout << "Version: C++ NO_GETOPT_LONG" << std::endl;
+#else
     std::cout << "Version: C++" << std::endl;
-    std::cout << "Required:" << std::endl;
+#endif
     for(std::size_t sIdx = 0; sIdx < NumOptOptions; sIdx++)
     {
-        // Assumes that the required args always are grouped first in the list
-        if(NumRequiredArgs == sIdx)
-        {
-            std::cout << std::endl << "Optional:" << std::endl;
-        }
+#ifdef NO_GETOPT_LONG
+        std::cout << "\t-" << (char)create_long_options[sIdx].val;
+#else
         std::size_t sCurrentOptionLength = strlen(create_long_options[sIdx].name);
         std::cout << "\t-" << (char)create_long_options[sIdx].val << " -"
                   << create_long_options[sIdx].name;
@@ -244,12 +355,14 @@ void PrintHelp(const std::string& programNameParm)
         {
             std::cout << " ";
         }
+#endif
         std::cout << " | " << OptOptionsHelpText[sIdx] << std::endl;
     }
 }
 
 void Verbose_PrintArgs(const SfClientArgs& argsParm)
 {
+    std::cout << "Mode:               " << argsParm.mMode << std::endl;
     std::cout << "Project:            " << argsParm.mProject << std::endl;
     std::cout << "Comment:            " << argsParm.mComment << std::endl;
     std::cout << "Epwd Path:          " << argsParm.mEpwdPath << std::endl;
@@ -260,7 +373,6 @@ void Verbose_PrintArgs(const SfClientArgs& argsParm)
     std::cout << "Output Path:        " << argsParm.mOutputPath << std::endl;
     std::cout << "Password ENV:        " << argsParm.mPasswordEnvVar << std::endl;
     std::cout << std::endl;
-    std::cout << "StdOut:   " << (argsParm.mServerStdOut ? "true" : "false") << std::endl;
     std::cout << "Verbose:  " << (argsParm.mVerbose ? "true" : "false") << std::endl;
     std::cout << "Debug:    " << (argsParm.mDebug ? "true" : "false") << std::endl;
 }
@@ -271,7 +383,7 @@ int main(int argc, char** argv)
     bool        sIsSuccess   = true;
 
     sf_client::ServerInfoV1      sSfServerV1;
-    sf_client::CommandArgsV1     sSfArgsV1;
+    sf_client::CommandArgsV2     sSfArgsV2;
     sf_client::CommandResponseV1 sSfResponseV1;
     sf_client::Session           sSession;
 
@@ -289,40 +401,103 @@ int main(int argc, char** argv)
         return -1; // Early return for simplicity
     }
 
-    if(sIsSuccess && !sArgs.mPayloadPath.empty())
+    if(sIsSuccess)
     {
-        sIsSuccess = ReadFile(sArgs.mPayloadPath, sSfArgsV1.mPayload);
+        SfClientArgsRequired sRequiredArgs = GetRequiredArgsForMode(sArgs.mMode);
+
+        std::string sModeToPrint = (sArgs.mMode.empty()) ? "V1_COMPAT_API" : sArgs.mMode;
+
+        if(sRequiredArgs.mProject && sArgs.mProject.empty())
+        {
+            sIsSuccess = false;
+            printf("\"%s\" is required for \"%s\" mode.\n",
+                   create_long_options[Project].name,
+                   sModeToPrint.c_str());
+        }
+
+        if(sRequiredArgs.mComment && sArgs.mComment.empty())
+        {
+            sIsSuccess = false;
+            printf("\"%s\" is required for \"%s\" mode.\n",
+                   create_long_options[Comment].name,
+                   sModeToPrint.c_str());
+        }
+
+        if(sRequiredArgs.mEpwdPath && sArgs.mEpwdPath.empty())
+        {
+            sIsSuccess = false;
+            printf("\"%s\" is required for \"%s\" mode.\n",
+                   create_long_options[Epwd].name,
+                   sModeToPrint.c_str());
+        }
+
+        if(sRequiredArgs.mUrl && sArgs.mUrl.empty())
+        {
+            sIsSuccess = false;
+            printf("\"%s\" is required for \"%s\" mode.\n",
+                   create_long_options[Url].name,
+                   sModeToPrint.c_str());
+        }
+
+        if(sRequiredArgs.mPrivateKeyPath && sArgs.mPrivateKeyPath.empty())
+        {
+            sIsSuccess = false;
+            printf("\"%s\" is required for \"%s\" mode.\n",
+                   create_long_options[PrivateKey].name,
+                   sModeToPrint.c_str());
+        }
+
+        if(sRequiredArgs.mPayloadPath && sArgs.mPayloadPath.empty())
+        {
+            sIsSuccess = false;
+            printf("\"%s\" is required for \"%s\" mode.\n",
+                   create_long_options[Payload].name,
+                   sModeToPrint.c_str());
+        }
+
+        if(sRequiredArgs.mOutputPath && sArgs.mOutputPath.empty())
+        {
+            sIsSuccess = false;
+            printf("\"%s\" is required for \"%s\" mode.\n",
+                   create_long_options[Output].name,
+                   sModeToPrint.c_str());
+        }
+
+        if(sRequiredArgs.mExtraServerParms && sArgs.mExtraServerParms.empty())
+        {
+            sIsSuccess = false;
+            printf("\"%s\" is required for \"%s\" mode.\n",
+                   create_long_options[Param].name,
+                   sModeToPrint.c_str());
+        }
     }
 
-    // Make life easier: if the project is "password_change" turn on stdout automatically.
-    // Otherwise the password will be changed but the result will not be presented to the
-    // caller.
-    if(sIsSuccess && sArgs.mProject == std::string("password_change"))
+    if(sIsSuccess && !sArgs.mPayloadPath.empty())
     {
-        sArgs.mServerStdOut = true;
-        std::cout << "Set std out true" << std::endl;
+        sIsSuccess = ReadFile(sArgs.mPayloadPath, sSfArgsV2.mPayload);
     }
 
     if(sIsSuccess)
     {
-        sSfServerV1.mUrl            = sArgs.mUrl;
-        sSfServerV1.mEpwdPath       = sArgs.mEpwdPath;
-        sSfServerV1.mCurlDebug      = sArgs.mDebug;
-        sSfServerV1.mVerbose        = sArgs.mVerbose;
-        sSfServerV1.mPasswordPtr    = NULL;
+        sSfServerV1.mUrl         = sArgs.mUrl;
+        sSfServerV1.mEpwdPath    = sArgs.mEpwdPath;
+        sSfServerV1.mCurlDebug   = sArgs.mDebug;
+        sSfServerV1.mVerbose     = sArgs.mVerbose;
+        sSfServerV1.mPasswordPtr = NULL;
 
-        sSfArgsV1.mProject          = sArgs.mProject;
-        sSfArgsV1.mComment          = sArgs.mComment;
-        sSfArgsV1.mExtraServerParms = sArgs.mExtraServerParms;
+        sSfArgsV2.mProject          = sArgs.mProject;
+        sSfArgsV2.mComment          = sArgs.mComment;
+        sSfArgsV2.mMode             = sArgs.mMode;
+        sSfArgsV2.mExtraServerParms = sArgs.mExtraServerParms;
     }
 
     if(sIsSuccess && !sArgs.mPasswordEnvVar.empty())
     {
         std::cout << "Attempting connection with password provided by ENV" << std::endl;
         sSfServerV1.mPrivateKeyPath = sArgs.mPrivateKeyPath;
-        sSfServerV1.mPasswordPtr = getenv(sArgs.mPasswordEnvVar.c_str());
-        sf_client::rc sRc        = sf_client::connectToServer(sSfServerV1, sSession);
-        sIsSuccess               = sf_client::success == sRc;
+        sSfServerV1.mPasswordPtr    = getenv(sArgs.mPasswordEnvVar.c_str());
+        sf_client::rc sRc           = sf_client::connectToServer(sSfServerV1, sSession);
+        sIsSuccess                  = sf_client::success == sRc;
         // The password was provided in the environment. If it is wrong there is nothing else to be
         // done.
 
@@ -333,21 +508,17 @@ int main(int argc, char** argv)
     }
     else if(sIsSuccess)
     {
-        bool        sIsConnected = false;
-        if(!sIsConnected &&
-           (NULL != getenv("SSH_AUTH_SOCK") ||
-            NULL != getenv("SSH_AGENT_PID")) )
+        bool sIsConnected = false;
+        if(!sIsConnected && (NULL != getenv("SSH_AUTH_SOCK") || NULL != getenv("SSH_AGENT_PID")))
         {
             std::cout << "Attempting connection with ssh-agent" << std::endl;
-            sf_client::rc sRc        = sf_client::failure;
-            // Attempt a connection without providing a password. If the key is registered in an agent
-            // then the connection will work without needing user interaction.
+            sf_client::rc sRc = sf_client::failure;
+            // Attempt a connection without providing a password. If the key is registered in an
+            // agent then the connection will work without needing user interaction.
             sRc = sf_client::connectToServer(sSfServerV1, sSession);
 
             sIsConnected = (sf_client::success == sRc);
-
         }
-
 
         // No ssh-agent or registered credentials, we will now prompt for a PW
         if(!sIsConnected)
@@ -356,7 +527,7 @@ int main(int argc, char** argv)
 
             // Provide private key to any other connection attempts
             sSfServerV1.mPrivateKeyPath = sArgs.mPrivateKeyPath;
-            sf_client::rc sRc = sf_client::success;
+            sf_client::rc sRc           = sf_client::success;
 
             char* sPasswordPtr = (char*)OPENSSL_malloc(MaxPasswordSize);
             if(sPasswordPtr)
@@ -377,7 +548,7 @@ int main(int argc, char** argv)
                     uint64_t sPasswordLength = 0;
 
                     const bool sResult = GetPassword(
-                                                     sPasswordPtr, MaxPasswordSize, sPasswordLength, sArgs.mVerbose);
+                        sPasswordPtr, MaxPasswordSize, sPasswordLength, sArgs.mVerbose);
 
                     if(sArgs.mVerbose)
                     {
@@ -411,24 +582,21 @@ int main(int argc, char** argv)
 
     if(sIsSuccess)
     {
-        sf_client::rc sRc = sf_client::sendCommandV1(sSession, sSfArgsV1, sSfResponseV1);
+        sf_client::rc sRc = sf_client::sendCommandV2(sSession, sSfArgsV2, sSfResponseV1);
         if(sf_client::success != sRc)
         {
-           sIsSuccess = false;
-           std::cout << "Send Command Failed with rc: " << (int)sRc << std::endl;
+            sIsSuccess = false;
+            std::cout << "Send Command Failed with rc: " << (int)sRc << std::endl;
         }
     }
 
     if(sIsSuccess)
     {
-        if(sArgs.mServerStdOut)
-        {
-            std::cout << std::endl;
-            std::cout << "==== Begin Standard Out ====" << std::endl;
-            std::cout << std::endl;
-            std::cout << sSfResponseV1.mStdOut << std::endl;
-            std::cout << "==== End of Standard Out ====" << std::endl;
-        }
+        std::cout << std::endl;
+        std::cout << "==== Begin Standard Out ====" << std::endl;
+        std::cout << std::endl;
+        std::cout << sSfResponseV1.mStdOut << std::endl;
+        std::cout << "==== End of Standard Out ====" << std::endl;
 
         if(0 != sSfResponseV1.mReturnCode)
         {
