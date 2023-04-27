@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 #include <curl/curl.h>
+#include <sf_client/sf_rc.h>
+#include <string>
 
 #ifndef _SFCURL_H
 #define _SFCURL_H
