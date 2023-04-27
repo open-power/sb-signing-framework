@@ -9,7 +9,7 @@
 
 namespace sf_client
 {
-    class Curl_Session;
+    struct Curl_Session;
 
     struct CommandArgsV1
     {
