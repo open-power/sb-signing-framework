@@ -253,12 +253,18 @@ sf_client::rc sf_client::curlConnectToServer(const Curl_ServerInfo& serverInfoPa
     if(serverInfoParm.mCurlDebug)
         SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_VERBOSE, 1L);
 
-    if (0 != serverInfoParm.mPrivateKeyPath.length())
-        SET_CURL_OPTION(
-            sRc, curlSessionParm, CURLOPT_SSH_PRIVATE_KEYFILE, serverInfoParm.mPrivateKeyPath.c_str());
-    if (0 != serverInfoParm.mPublicKeyPath.length())
-        SET_CURL_OPTION(
-            sRc, curlSessionParm, CURLOPT_SSH_PUBLIC_KEYFILE, serverInfoParm.mPublicKeyPath.c_str());
+    SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_PUBLICKEY);
+
+    if(0 != serverInfoParm.mPrivateKeyPath.length())
+        SET_CURL_OPTION(sRc,
+                        curlSessionParm,
+                        CURLOPT_SSH_PRIVATE_KEYFILE,
+                        serverInfoParm.mPrivateKeyPath.c_str());
+    if(0 != serverInfoParm.mPublicKeyPath.length())
+        SET_CURL_OPTION(sRc,
+                        curlSessionParm,
+                        CURLOPT_SSH_PUBLIC_KEYFILE,
+                        serverInfoParm.mPublicKeyPath.c_str());
 
     SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_URL, serverInfoParm.mUrl.c_str());
     SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_PROTOCOLS, CURLPROTO_SFTP);
