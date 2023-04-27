@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <algorithm>
 #include <iostream>
 #include <string.h>
 
@@ -50,13 +51,13 @@ CK_FLAGS PKCS11_SfSlot::getFlags() const
 void PKCS11_SfSlot::getDescription(CK_UTF8CHAR* dstParm, uint64_t sizeParm) const
 {
     memset(dstParm, ' ', sizeParm);
-    memcpy(dstParm, mDescription.c_str(), std::min(sizeParm, mDescription.size()));
+    memcpy(dstParm, mDescription.c_str(), std::min<uint64_t>(sizeParm, mDescription.size()));
 }
 
 void PKCS11_SfSlot::getManufacturerId(CK_UTF8CHAR* dstParm, uint64_t sizeParm) const
 {
     memset(dstParm, ' ', sizeParm);
-    memcpy(dstParm, mManufacturerId.c_str(), std::min(sizeParm, mManufacturerId.size()));
+    memcpy(dstParm, mManufacturerId.c_str(), std::min<uint64_t>(sizeParm, mManufacturerId.size()));
 }
 
 CK_VERSION PKCS11_SfSlot::getHardwareVersion() const { return mHardwareVersion; }

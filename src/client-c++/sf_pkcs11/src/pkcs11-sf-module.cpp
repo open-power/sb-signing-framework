@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <algorithm>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 #include <sf_utils/sf_utils.h>
@@ -55,13 +56,15 @@ CK_FLAGS PKCS11_SfModule::getFlags() const
 void PKCS11_SfModule::getDescription(CK_UTF8CHAR* dstParm, uint64_t sizeParm) const
 {
     memset(dstParm, ' ', sizeParm);
-    memcpy(dstParm, mLibraryDescription.c_str(), std::min(sizeParm, mLibraryDescription.size()));
+    memcpy(dstParm,
+           mLibraryDescription.c_str(),
+           std::min<uint64_t>(sizeParm, mLibraryDescription.size()));
 }
 
 void PKCS11_SfModule::getManufacturerId(CK_UTF8CHAR* dstParm, uint64_t sizeParm) const
 {
     memset(dstParm, ' ', sizeParm);
-    memcpy(dstParm, mManufacturerID.c_str(), std::min(sizeParm, mManufacturerID.size()));
+    memcpy(dstParm, mManufacturerID.c_str(), std::min<uint64_t>(sizeParm, mManufacturerID.size()));
 }
 
 CK_VERSION PKCS11_SfModule::getCryptokiVersion() const { return mCryptokiVersion; }
