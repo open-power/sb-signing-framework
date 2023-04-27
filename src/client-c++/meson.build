@@ -16,6 +16,28 @@ endif
 
 cc = meson.get_compiler('cpp')
 
+libcrypto_dep = dependency('libcrypto', required : false)
+if not libcrypto_dep.found()
+  libcrypto_dep = cc.find_library('crypto', required : false )
+endif
+
+libssl_dep = dependency('ssl', required : false)
+if not libssl_dep.found()
+  libssl_dep = cc.find_library('ssl', required : false )
+endif
+
+libjson_c_dep = dependency('json-c', required : false)
+
+if get_option('homebrew') == true
+  # The curl library shipped in MacOS does not have sftp support.
+  # The homebrew package 'curl-openssl' contains the required library, but is not included in the
+  # default library path
+  libcurl_dep = cc.find_library('libcurl', dirs: '/usr/local/opt/curl/lib', required: true)
+  libssh_dep = cc.find_library('libssh2', dirs: '/usr/local/opt/libssh2/lib', required: true)
+else
+  libcurl_dep = dependency('curl', required : true)
+endif
+
 subdir('sf_utils')
 subdir('sf_client_lib')
 

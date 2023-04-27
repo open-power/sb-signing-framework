@@ -1,10 +1,11 @@
 cc = meson.get_compiler('cpp')
 
 sf_client_deps = [
-    dependency('json-c'),
-    dependency('libcrypto'),
-    dependency('libcurl'),
-    dependency('libssl'),
+    libjson_c_dep,
+    libcrypto_dep,
+    libcurl_dep,
+    libssl_dep,
+    libssh_dep,
     sf_utils_dep
 ]
 
