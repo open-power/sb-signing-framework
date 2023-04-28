@@ -75,21 +75,17 @@ bool PKCS11_SfModule::openServerConnection(std::string urlParm,
                                            std::string epwdParm,
                                            std::string pkeyParm)
 {
-
-    // if(mServerPassword.empty())
-    //    return false;
-
     mUrl            = urlParm;
     mEpwdPath       = epwdParm;
     mPrivateKeyPath = pkeyParm;
 
     sf_client::ServerInfoV1 sSfServerV1;
     sSfServerV1.mCurlDebug      = false;
-    sSfServerV1.mPasswordPtr    = mServerPassword.c_str();
     sSfServerV1.mPrivateKeyPath = mPrivateKeyPath;
     sSfServerV1.mEpwdPath       = mEpwdPath;
     sSfServerV1.mUrl            = mUrl;
     sSfServerV1.mUseSshAgent    = true;
+    sSfServerV1.mPasswordPtr    = NULL;
 #ifdef DEBUG
     sSfServerV1.mVerbose = true;
 #else
@@ -102,7 +98,6 @@ bool PKCS11_SfModule::openServerConnection(std::string urlParm,
     std::cout << "Open Connection RC: " << std::hex << sRc << std::dec << std::endl;
     if(sf_client::success != sRc)
     {
-        // std::cout << "Password " << mServerPassword << std::endl;
         std::cout << "PrivateKeyPath " << mPrivateKeyPath << std::endl;
         std::cout << "Url " << mUrl << std::endl;
     }
@@ -214,17 +209,3 @@ bool PKCS11_SfModule::closeServerConnection()
     sf_client::disconnect(mSfClientSession);
     return true;
 }
-
-bool PKCS11_SfModule::promptPassword()
-{
-    char sPassword[1024];
-
-    uint64_t sBytesWritten = 0;
-    bool     sIsSuccess    = GetPassword(sPassword, sizeof(sPassword), sBytesWritten, false);
-
-    mServerPassword = std::string(sPassword, sPassword + sBytesWritten);
-
-    return sIsSuccess;
-}
-
-const std::string& PKCS11_SfModule::getPassword() const { return mServerPassword; }
