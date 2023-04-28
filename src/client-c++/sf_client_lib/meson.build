@@ -8,6 +8,7 @@ sf_client_deps = [
     sf_utils_dep
 ]
 
+
 lib_sf_client = static_library(
     'sf_client',
     'sf_client.cpp',

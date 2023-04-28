@@ -1,4 +1,6 @@
 
 option('lib-pkcs11', type : 'boolean', value : false)
 option('getopt_long', type : 'boolean', value : true)
-option('homebrew', type : 'boolean', value : false)
+option('libcurl', type : 'string')
+option('verbose', type : 'boolean', value: false)
+option('ignore-deprecated', type: 'boolean', value: false)
