@@ -303,6 +303,12 @@ sf_client::rc sf_client::curlConnectToServer(const Curl_ServerInfo& serverInfoPa
         }
     }
 
+    if(curlSessionParm.mVerbose && CURLE_OK != sRc)
+    {
+        std::cout << "connectToServer() failed with CURL RC: " << curl_easy_strerror(sRc)
+                  << std::endl;
+    }
+
     return (CURLE_OK == sRc) ? success : curl_init_failure;
 }
 

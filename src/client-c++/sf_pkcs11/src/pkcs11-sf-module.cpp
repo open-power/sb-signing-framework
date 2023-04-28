@@ -95,7 +95,7 @@ bool PKCS11_SfModule::openServerConnection(std::string urlParm,
     sf_client::rc sRc = sf_client::connectToServer(sSfServerV1, mSfClientSession);
 
 #ifdef DEBUG
-    std::cout << "Open Connection RC: " << std::hex << sRc << std::dec << std::endl;
+    std::cout << "sf_client rc: " << std::dec << sRc << std::dec << std::endl;
     if(sf_client::success != sRc)
     {
         std::cout << "PrivateKeyPath " << mPrivateKeyPath << std::endl;
