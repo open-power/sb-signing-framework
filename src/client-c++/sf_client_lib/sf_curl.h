@@ -25,7 +25,8 @@ namespace sf_client
     struct Curl_ServerInfo
     {
         Curl_ServerInfo()
-        : mVerbose(false)
+        : mUseSshAgent(false)
+        , mVerbose(false)
         , mCurlDebug(false)
         {
         }
@@ -33,6 +34,7 @@ namespace sf_client
         std::string mPrivateKeyPath;
         std::string mPublicKeyPath;
         std::string mEpwdPath;
+        bool        mUseSshAgent;
         const char* mPasswordPtr;
         bool        mVerbose;
         bool        mCurlDebug;

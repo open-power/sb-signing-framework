@@ -253,7 +253,16 @@ sf_client::rc sf_client::curlConnectToServer(const Curl_ServerInfo& serverInfoPa
     if(serverInfoParm.mCurlDebug)
         SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_VERBOSE, 1L);
 
-    SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_PUBLICKEY);
+    if(serverInfoParm.mUseSshAgent)
+    {
+        // Restrict CURL session to ONLY use SSH_AGENT and fail otherwise
+        SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_AGENT);
+    }
+    else
+    {
+        // Restrict CURL session to ONLY use private key file directly and fail otherwise
+        SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_PUBLICKEY);
+    }
 
     if(0 != serverInfoParm.mPrivateKeyPath.length())
         SET_CURL_OPTION(sRc,

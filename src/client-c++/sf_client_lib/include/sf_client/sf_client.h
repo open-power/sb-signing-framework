@@ -34,13 +34,15 @@ namespace sf_client
     struct ServerInfoV1
     {
         ServerInfoV1()
-        : mVerbose(false)
+        : mUseSshAgent(false)
+        , mVerbose(false)
         , mCurlDebug(false)
         {
         }
         std::string mUrl;
         std::string mPrivateKeyPath;
         std::string mEpwdPath;
+        bool        mUseSshAgent;
         const char* mPasswordPtr;
         bool        mVerbose;
         bool        mCurlDebug;

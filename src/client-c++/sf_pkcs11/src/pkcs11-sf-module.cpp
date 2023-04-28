@@ -89,6 +89,7 @@ bool PKCS11_SfModule::openServerConnection(std::string urlParm,
     sSfServerV1.mPrivateKeyPath = mPrivateKeyPath;
     sSfServerV1.mEpwdPath       = mEpwdPath;
     sSfServerV1.mUrl            = mUrl;
+    sSfServerV1.mUseSshAgent    = true;
 #ifdef DEBUG
     sSfServerV1.mVerbose = true;
 #else

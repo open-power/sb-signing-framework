@@ -103,6 +103,7 @@ sf_client::rc sf_client::connectToServer(const ServerInfoV1& serverParm, Session
     sServerInfo.mEpwdPath    = serverParm.mEpwdPath;
     sServerInfo.mVerbose     = serverParm.mVerbose;
     sServerInfo.mCurlDebug   = serverParm.mCurlDebug;
+    sServerInfo.mUseSshAgent = serverParm.mUseSshAgent;
 
     return curlConnectToServer(sServerInfo, *sessionParm.mCurlSession);
 }
