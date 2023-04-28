@@ -5,7 +5,6 @@ sf_client_deps = [
     libcrypto_dep,
     libcurl_dep,
     libssl_dep,
-    libssh_dep,
     sf_utils_dep
 ]
 

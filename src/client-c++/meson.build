@@ -21,7 +21,7 @@ if not libcrypto_dep.found()
   libcrypto_dep = cc.find_library('crypto', required : false )
 endif
 
-libssl_dep = dependency('ssl', required : false)
+libssl_dep = dependency('libssl', required : false)
 if not libssl_dep.found()
   libssl_dep = cc.find_library('ssl', required : false )
 endif
@@ -35,7 +35,10 @@ if get_option('homebrew') == true
   libcurl_dep = cc.find_library('libcurl', dirs: '/usr/local/opt/curl/lib', required: true)
   libssh_dep = cc.find_library('libssh2', dirs: '/usr/local/opt/libssh2/lib', required: true)
 else
-  libcurl_dep = dependency('curl', required : true)
+  libcurl_dep = dependency('libcurl', required : false)
+  if not libcurl_dep.found()
+    libcurl_dep = cc.find_library('curl', required : false )
+  endif
 endif
 
 subdir('sf_utils')
