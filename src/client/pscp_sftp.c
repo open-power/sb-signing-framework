@@ -96,7 +96,11 @@ struct pscp_sftp_session*  startSftpSession(const char * sftp_url, const char * 
         }
     }
 
+#if LIBCURL_VERSION_NUM >= 0x075500
+    if(status == CURLE_OK) status = curl_easy_setopt(sftp->curl, CURLOPT_PROTOCOLS_STR, "sftp");
+#else
     if(status == CURLE_OK) status = curl_easy_setopt(sftp->curl, CURLOPT_PROTOCOLS, CURLPROTO_SFTP);
+#endif
     if(status == CURLE_OK) status = curl_easy_setopt(sftp->curl, CURLOPT_SSH_PRIVATE_KEYFILE, privateKeyPath);
 
     if(status == CURLE_OK)

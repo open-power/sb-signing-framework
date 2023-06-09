@@ -87,7 +87,7 @@ bool GetPassword(char*          dstParm,
     fflush(stdout);
 
     char        sChar             = getchar();
-    std::size_t sPassphraseLength = 0;
+    uint64_t sPassphraseLength = 0;
 
     while(sChar != '\n' && sChar != '\f' && sChar != '\r')
     {

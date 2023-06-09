@@ -50,13 +50,13 @@ CK_FLAGS PKCS11_SfSlot::getFlags() const
 void PKCS11_SfSlot::getDescription(CK_UTF8CHAR* dstParm, uint64_t sizeParm) const
 {
     memset(dstParm, ' ', sizeParm);
-    memcpy(dstParm, mDescription.c_str(), std::min(sizeParm, mDescription.size()));
+    memcpy(dstParm, mDescription.c_str(), std::min(sizeParm, static_cast<uint64_t>(mDescription.size())));
 }
 
 void PKCS11_SfSlot::getManufacturerId(CK_UTF8CHAR* dstParm, uint64_t sizeParm) const
 {
     memset(dstParm, ' ', sizeParm);
-    memcpy(dstParm, mManufacturerId.c_str(), std::min(sizeParm, mManufacturerId.size()));
+    memcpy(dstParm, mManufacturerId.c_str(), std::min(sizeParm, static_cast<uint64_t>(mManufacturerId.size())));
 }
 
 CK_VERSION PKCS11_SfSlot::getHardwareVersion() const { return mHardwareVersion; }
