@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <openssl/opensslv.h>
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#include <openssl/core_names.h>
+#include <openssl/param_build.h>
+#endif
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 #include <sf_utils/sf_utils.h>
@@ -55,13 +60,13 @@ CK_FLAGS PKCS11_SfModule::getFlags() const
 void PKCS11_SfModule::getDescription(CK_UTF8CHAR* dstParm, uint64_t sizeParm) const
 {
     memset(dstParm, ' ', sizeParm);
-    memcpy(dstParm, mLibraryDescription.c_str(), std::min(sizeParm, mLibraryDescription.size()));
+    memcpy(dstParm, mLibraryDescription.c_str(), std::min(sizeParm, static_cast<uint64_t>(mLibraryDescription.size())));
 }
 
 void PKCS11_SfModule::getManufacturerId(CK_UTF8CHAR* dstParm, uint64_t sizeParm) const
 {
     memset(dstParm, ' ', sizeParm);
-    memcpy(dstParm, mManufacturerID.c_str(), std::min(sizeParm, mManufacturerID.size()));
+    memcpy(dstParm, mManufacturerID.c_str(), std::min(sizeParm, static_cast<uint64_t>(mManufacturerID.size())));
 }
 
 CK_VERSION PKCS11_SfModule::getCryptokiVersion() const { return mCryptokiVersion; }
@@ -149,11 +154,26 @@ bool PKCS11_SfModule::initObjects(const PKCS11_SF_SESSION_CONFIG& configParm)
             std::string sPEM(sResponse.mOutput.data(),
                              sResponse.mOutput.data() + sResponse.mOutput.size());
             BIO_puts(sMemoryBio, sPEM.c_str());
-            RSA* sPubKey = PEM_read_bio_RSA_PUBKEY(sMemoryBio, NULL, NULL, NULL);
-
             // FIXME: Add some error handling for NULL pointers
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+            EVP_PKEY* sPubKey = PEM_read_bio_PUBKEY(sMemoryBio, NULL, NULL, NULL);
+            BIGNUM* sModulusBN        = NULL;
+            int rc = EVP_PKEY_get_bn_param(sPubKey, OSSL_PKEY_PARAM_RSA_N, &sModulusBN);
+            if (rc != 1)
+            {
+                std::cout << "Error getting N parameter" << std::endl;
+            }
+            BIGNUM* sPublicExponentBN = NULL;
+            rc = EVP_PKEY_get_bn_param(sPubKey, OSSL_PKEY_PARAM_RSA_E, &sPublicExponentBN);
+            if (rc != 1)
+            {
+                std::cout << "Error getting E parameter" << std::endl;
+            }
+#else
+            RSA* sPubKey = PEM_read_bio_RSA_PUBKEY(sMemoryBio, NULL, NULL, NULL);
             const BIGNUM* sModulusBN        = RSA_get0_n(sPubKey);
             const BIGNUM* sPublicExponentBN = RSA_get0_e(sPubKey);
+#endif
 
             // const BIGNUM* sModulusBN        = sPubKey->n;
             // const BIGNUM* sPublicExponentBN = sPubKey->e;
@@ -181,7 +201,11 @@ bool PKCS11_SfModule::initObjects(const PKCS11_SF_SESSION_CONFIG& configParm)
 #endif
 
             if(sPubKey)
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+                EVP_PKEY_free(sPubKey);
+#else
                 RSA_free(sPubKey);
+#endif
             if(sMemoryBio)
                 BIO_free(sMemoryBio);
 

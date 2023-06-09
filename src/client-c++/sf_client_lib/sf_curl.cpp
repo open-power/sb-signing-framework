@@ -261,7 +261,11 @@ sf_client::rc sf_client::curlConnectToServer(const Curl_ServerInfo& serverInfoPa
             sRc, curlSessionParm, CURLOPT_SSH_PUBLIC_KEYFILE, serverInfoParm.mPublicKeyPath.c_str());
 
     SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_URL, serverInfoParm.mUrl.c_str());
+#if LIBCURL_VERSION_NUM >= 0x075500
+    SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_PROTOCOLS_STR, "sftp");
+#else
     SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_PROTOCOLS, CURLPROTO_SFTP);
+#endif
 
     SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_CONNECT_ONLY, 1L);
 
