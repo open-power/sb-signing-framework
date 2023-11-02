@@ -25,6 +25,8 @@ bool GetPassword(char*          dstParm,
                  uint64_t&      bytesWrittenParm,
                  const bool     verboseParm);
 
+bool IsPathWriteable(const std::string& filePathParm);
+
 bool ReadFile(const std::string& filePathParm, std::vector<uint8_t>& dstParm);
 
 bool WriteFile(const std::string& filePathParm, const std::vector<uint8_t>& srcParm);

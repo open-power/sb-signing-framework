@@ -253,12 +253,27 @@ sf_client::rc sf_client::curlConnectToServer(const Curl_ServerInfo& serverInfoPa
     if(serverInfoParm.mCurlDebug)
         SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_VERBOSE, 1L);
 
-    if (0 != serverInfoParm.mPrivateKeyPath.length())
-        SET_CURL_OPTION(
-            sRc, curlSessionParm, CURLOPT_SSH_PRIVATE_KEYFILE, serverInfoParm.mPrivateKeyPath.c_str());
-    if (0 != serverInfoParm.mPublicKeyPath.length())
-        SET_CURL_OPTION(
-            sRc, curlSessionParm, CURLOPT_SSH_PUBLIC_KEYFILE, serverInfoParm.mPublicKeyPath.c_str());
+    if(serverInfoParm.mUseSshAgent)
+    {
+        // Restrict CURL session to ONLY use SSH_AGENT and fail otherwise
+        SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_AGENT);
+    }
+    else
+    {
+        // Restrict CURL session to ONLY use private key file directly and fail otherwise
+        SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_PUBLICKEY);
+    }
+
+    if(0 != serverInfoParm.mPrivateKeyPath.length())
+        SET_CURL_OPTION(sRc,
+                        curlSessionParm,
+                        CURLOPT_SSH_PRIVATE_KEYFILE,
+                        serverInfoParm.mPrivateKeyPath.c_str());
+    if(0 != serverInfoParm.mPublicKeyPath.length())
+        SET_CURL_OPTION(sRc,
+                        curlSessionParm,
+                        CURLOPT_SSH_PUBLIC_KEYFILE,
+                        serverInfoParm.mPublicKeyPath.c_str());
 
     SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_URL, serverInfoParm.mUrl.c_str());
 #if LIBCURL_VERSION_NUM >= 0x075500
@@ -290,6 +305,12 @@ sf_client::rc sf_client::curlConnectToServer(const Curl_ServerInfo& serverInfoPa
             curl_easy_cleanup(curlSessionParm.mCurlPtr);
             curlSessionParm.mCurlPtr = NULL;
         }
+    }
+
+    if(curlSessionParm.mVerbose && CURLE_OK != sRc)
+    {
+        std::cout << "connectToServer() failed with CURL RC: " << curl_easy_strerror(sRc)
+                  << std::endl;
     }
 
     return (CURLE_OK == sRc) ? success : curl_init_failure;

@@ -33,6 +33,16 @@ namespace sf_client
         std::vector<uint8_t> mPayload;
     };
 
+    struct Json_CommandRequestV2
+    {
+        std::string          mMode;
+        std::string          mProject;
+        std::string          mParms;
+        std::string          mComment;
+        std::string          mEpwd;
+        std::vector<uint8_t> mPayload;
+    };
+
     struct Json_CommandResponseV1
     {
         std::vector<uint8_t> mResult;
@@ -52,6 +62,9 @@ namespace sf_client
 
     rc parseCommandResponseJsonV1(const std::string&      jsonParm,
                                   Json_CommandResponseV1& dstResponseParm);
+
+    rc createCommandRequestJsonV2(const Json_CommandRequestV2& requestParm,
+                                  std::string&                 dstJsonParm);
 
 } // namespace sf_client
 

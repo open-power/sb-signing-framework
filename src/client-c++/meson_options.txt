@@ -1,2 +1,4 @@
 
 option('lib-pkcs11', type : 'boolean', value : false)
+option('getopt_long', type : 'boolean', value : true)
+option('verbose', type : 'boolean', value: false)

@@ -36,8 +36,6 @@ class PKCS11_SfModule
 
     CK_VERSION getLibraryVersion() const;
 
-    bool promptPassword();
-
     const std::string& getPassword() const;
 
     bool openServerConnection(std::string urlParm, std::string epwdParm, std::string pkeyParm);
@@ -60,7 +58,6 @@ class PKCS11_SfModule
 
     PKCS11_SfSlot mSlot;
 
-    std::string        mServerPassword;
     sf_client::Session mSfClientSession;
     std::string        mUrl;
     std::string        mEpwdPath;

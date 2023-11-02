@@ -23,6 +23,7 @@
 
 #include "sf_json.h"
 
+const static std::string JsonModeTag      = "project_mode";
 const static std::string JsonProjectTag   = "project";
 const static std::string JsonParameterTag = "parameters";
 const static std::string JsonUserTag      = "user";
@@ -191,6 +192,46 @@ sf_client::rc sf_client::createCommandRequestJsonV1(const Json_CommandRequestV1&
     ENCODE_JSON_STRING(sRc, sRootObject, JsonUserTag, requestParm.mSelfReportedUser);
     ENCODE_JSON_STRING(sRc, sRootObject, JsonCommentTag, requestParm.mComment);
     ENCODE_JSON_STRING(sRc, sRootObject, JsonEpwdTag, requestParm.mEpwdHex);
+    ENCODE_JSON_BINARY(sRc, sRootObject, JsonPayloadTag, requestParm.mPayload);
+
+    if(success == sRc)
+    {
+        const char* sEncodedJsonPtr = json_object_to_json_string(sRootObject);
+        if(sEncodedJsonPtr)
+        {
+            dstJsonParm = std::string(sEncodedJsonPtr);
+        }
+        else
+        {
+            sRc = json_convert_to_string_fail;
+        }
+    }
+
+    if(sRootObject)
+        json_object_put(sRootObject);
+
+    return sRc;
+}
+
+sf_client::rc sf_client::createCommandRequestJsonV2(const Json_CommandRequestV2& requestParm,
+                                                    std::string&                 dstJsonParm)
+{
+    rc sRc = success;
+
+    struct json_object* sRootObject = NULL;
+
+    sRootObject = json_object_new_object();
+
+    if(!sRootObject)
+    {
+        sRc = json_new_obj_fail;
+    }
+
+    ENCODE_JSON_STRING(sRc, sRootObject, JsonModeTag, requestParm.mMode);
+    ENCODE_JSON_STRING(sRc, sRootObject, JsonProjectTag, requestParm.mProject);
+    ENCODE_JSON_STRING(sRc, sRootObject, JsonParameterTag, requestParm.mParms);
+    ENCODE_JSON_STRING(sRc, sRootObject, JsonCommentTag, requestParm.mComment);
+    ENCODE_JSON_STRING(sRc, sRootObject, JsonEpwdTag, requestParm.mEpwd);
     ENCODE_JSON_BINARY(sRc, sRootObject, JsonPayloadTag, requestParm.mPayload);
 
     if(success == sRc)

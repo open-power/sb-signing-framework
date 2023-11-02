@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 #include <curl/curl.h>
+#include <sf_client/sf_rc.h>
+#include <string>
 
 #ifndef _SFCURL_H
 #define _SFCURL_H
@@ -23,7 +25,8 @@ namespace sf_client
     struct Curl_ServerInfo
     {
         Curl_ServerInfo()
-        : mVerbose(false)
+        : mUseSshAgent(false)
+        , mVerbose(false)
         , mCurlDebug(false)
         {
         }
@@ -31,6 +34,7 @@ namespace sf_client
         std::string mPrivateKeyPath;
         std::string mPublicKeyPath;
         std::string mEpwdPath;
+        bool        mUseSshAgent;
         const char* mPasswordPtr;
         bool        mVerbose;
         bool        mCurlDebug;

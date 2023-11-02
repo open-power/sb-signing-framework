@@ -25,10 +25,11 @@ sf_client::Session::Session() { mCurlSession = new Curl_Session(); }
 
 sf_client::Session::~Session() { delete mCurlSession; }
 
-bool PrivateKeyEncrypted(const std::string& keyPathParm)
+sf_client::rc PrivateKeyEncrypted(const std::string& keyPathParm)
 {
-    bool  encrypted = false;
-    FILE* key       = fopen(keyPathParm.c_str(), "r");
+    sf_client::rc rc = sf_client::rc::pkey_not_encrypted;
+
+    FILE* key = fopen(keyPathParm.c_str(), "r");
     if(key)
     {
         fseek(key, 0, SEEK_END);
@@ -45,7 +46,7 @@ bool PrivateKeyEncrypted(const std::string& keyPathParm)
                 char* location = strstr(privKey, "ENCRYPTED");
                 if(location)
                 {
-                    encrypted = true;
+                    rc = sf_client::rc::success;
                 }
             }
             free(privKey);
@@ -56,11 +57,12 @@ bool PrivateKeyEncrypted(const std::string& keyPathParm)
     else
     {
         std::cerr << "ERROR: Unable to open ssh key file " << keyPathParm << std::endl;
+        rc = sf_client::rc::invalid_parm;
     }
-    return encrypted;
+    return rc;
 }
 
-static bool ValidateRequiredArgsV1(const sf_client::CommandArgsV1& argsParm)
+static bool ValidateRequiredArgsV1(const sf_client::CommandArgs& argsParm)
 {
     if(argsParm.mProject.empty())
     {
@@ -76,32 +78,46 @@ static bool ValidateRequiredArgsV1(const sf_client::CommandArgsV1& argsParm)
     }
 }
 
-sf_client::rc sf_client::connectToServer(const ServerInfoV1& serverParm, Session& sessionParm)
+sf_client::rc sf_client::connectToServer(const ServerInfo& serverParm, Session& sessionParm)
 {
+    sf_client::rc sRc = sf_client::rc::success;
+
     if(!sessionParm.mCurlSession)
     {
-        return failure;
+        sRc = failure;
     }
-    else if(0 != serverParm.mPrivateKeyPath.length() &&
-            !PrivateKeyEncrypted(serverParm.mPrivateKeyPath))
+    else if(0 == serverParm.mPrivateKeyPath.length())
     {
-        return pkey_not_encrypted;
+        sRc = invalid_parm;
+    }
+    else
+    {
+        sRc = PrivateKeyEncrypted(serverParm.mPrivateKeyPath);
     }
 
-    Curl_ServerInfo sServerInfo;
-    sServerInfo.mUrl            = serverParm.mUrl;
-    sServerInfo.mPrivateKeyPath = serverParm.mPrivateKeyPath;
-    if (0 != sServerInfo.mPrivateKeyPath.length()) {
-        sServerInfo.mPublicKeyPath  = serverParm.mPrivateKeyPath + ".pub";
-    } else {
-        sServerInfo.mPublicKeyPath.clear();
-    }
-    sServerInfo.mPasswordPtr    = serverParm.mPasswordPtr;
-    sServerInfo.mEpwdPath       = serverParm.mEpwdPath;
-    sServerInfo.mVerbose        = serverParm.mVerbose;
-    sServerInfo.mCurlDebug      = serverParm.mCurlDebug;
+    if(success == sRc)
+    {
+        Curl_ServerInfo sServerInfo;
+        sServerInfo.mUrl            = serverParm.mUrl;
+        sServerInfo.mPrivateKeyPath = serverParm.mPrivateKeyPath;
+        if(0 != sServerInfo.mPrivateKeyPath.length())
+        {
+            sServerInfo.mPublicKeyPath = serverParm.mPrivateKeyPath + ".pub";
+        }
+        else
+        {
+            sServerInfo.mPublicKeyPath.clear();
+        }
+        sServerInfo.mPasswordPtr = serverParm.mPasswordPtr;
+        sServerInfo.mEpwdPath    = serverParm.mEpwdPath;
+        sServerInfo.mVerbose     = serverParm.mVerbose;
+        sServerInfo.mCurlDebug   = serverParm.mCurlDebug;
+        sServerInfo.mUseSshAgent = serverParm.mUseSshAgent;
 
-    return curlConnectToServer(sServerInfo, *sessionParm.mCurlSession);
+        sRc = curlConnectToServer(sServerInfo, *sessionParm.mCurlSession);
+    }
+
+    return sRc;
 }
 
 sf_client::rc sf_client::disconnect(Session& sessionParm)
@@ -114,9 +130,9 @@ sf_client::rc sf_client::disconnect(Session& sessionParm)
     return success;
 }
 
-sf_client::rc sf_client::sendCommandV1(Session&                        sessionParm,
-                                       const sf_client::CommandArgsV1& argsParm,
-                                       sf_client::CommandResponseV1&   responseParm)
+sf_client::rc sf_client::sendCommandV1(Session&                      sessionParm,
+                                       const sf_client::CommandArgs& argsParm,
+                                       sf_client::CommandResponse&   responseParm)
 {
     rc sRc = success;
 
@@ -138,8 +154,7 @@ sf_client::rc sf_client::sendCommandV1(Session&                        sessionPa
         if(sIsSuccess)
         {
             // File is ASCII, copy directly into the string.
-            sJsonRequest.mEpwdHex = std::string(sEpwdBinary.data(),
-                                                sEpwdBinary.data() + sEpwdBinary.size());
+            sJsonRequest.mEpwdHex = std::string(sEpwdBinary.begin(), sEpwdBinary.end());
             RemoveAllWhitespace(sJsonRequest.mEpwdHex);
         }
         else
@@ -157,6 +172,66 @@ sf_client::rc sf_client::sendCommandV1(Session&                        sessionPa
         sJsonRequest.mSelfReportedUser = GetLocalUser() + "@" + GetLocalHost();
 
         sRc = createCommandRequestJsonV1(sJsonRequest, sJsonRequestString);
+    }
+
+    if(success == sRc)
+    {
+        sRc = sendAndReceiveCommand(
+            *sessionParm.mCurlSession, sJsonRequestString, sJsonResponseString);
+    }
+
+    if(success == sRc)
+    {
+        sRc = parseCommandResponseJsonV1(sJsonResponseString, sJsonResponse);
+    }
+
+    if(success == sRc)
+    {
+        responseParm.mOutput     = sJsonResponse.mResult;
+        responseParm.mStdOut     = sJsonResponse.mStandardOut;
+        responseParm.mReturnCode = sJsonResponse.mReturnValue;
+    }
+
+    return sRc;
+}
+
+sf_client::rc sf_client::sendCommandV2(Session&                      sessionParm,
+                                       const sf_client::CommandArgs& argsParm,
+                                       sf_client::CommandResponse&   responseParm)
+{
+    rc sRc = success;
+
+    std::string sJsonRequestString;
+    std::string sJsonResponseString;
+
+    Json_CommandRequestV2  sJsonRequest;
+    Json_CommandResponseV1 sJsonResponse;
+
+    if(success == sRc && !sessionParm.mCurlSession->mEpwdPath.empty())
+    {
+        std::vector<uint8_t> sEpwdBinary;
+        bool sIsSuccess = ReadFile(sessionParm.mCurlSession->mEpwdPath, sEpwdBinary);
+        if(sIsSuccess)
+        {
+            // File is ASCII, copy directly into the string.
+            sJsonRequest.mEpwd = std::string(sEpwdBinary.begin(), sEpwdBinary.end());
+            RemoveAllWhitespace(sJsonRequest.mEpwd);
+        }
+        else
+        {
+            sRc = epwd_read_fail;
+        }
+    }
+
+    if(success == sRc)
+    {
+        sJsonRequest.mMode    = argsParm.mMode;
+        sJsonRequest.mProject = argsParm.mProject;
+        sJsonRequest.mComment = argsParm.mComment;
+        sJsonRequest.mParms   = argsParm.mExtraServerParms;
+        sJsonRequest.mPayload = argsParm.mPayload;
+
+        sRc = createCommandRequestJsonV2(sJsonRequest, sJsonRequestString);
     }
 
     if(success == sRc)

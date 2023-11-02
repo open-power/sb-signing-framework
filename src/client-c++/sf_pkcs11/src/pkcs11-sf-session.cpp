@@ -98,7 +98,7 @@ bool PKCS11_SfSession::doSigning(CK_BYTE_PTR srcParm,
                                  CK_ULONG&   dstLengthParm)
 {
 
-    sf_client::CommandArgsV1 sArgsV1;
+    sf_client::CommandArgs sArgsV1;
     sArgsV1.mProject = mToken.mObjects[mSignKey].mProjectName;
 
     sArgsV1.mComment = "PKCS11: Do sign"; // @TODO: Use a meaningful comment
@@ -119,7 +119,7 @@ bool PKCS11_SfSession::doSigning(CK_BYTE_PTR srcParm,
     std::cout << "Source Length " << sArgsV1.mPayload.size() << std::endl;
 #endif
 
-    sf_client::CommandResponseV1 sResponseV1;
+    sf_client::CommandResponse sResponseV1;
 
     sf_client::rc sRc = sf_client::sendCommandV1(mToken.mSfClientSession, sArgsV1, sResponseV1);
 

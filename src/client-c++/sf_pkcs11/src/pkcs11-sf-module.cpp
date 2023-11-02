@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 #include <openssl/opensslv.h>
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#if(OPENSSL_VERSION_NUMBER >= 0x30000000L)
 #include <openssl/core_names.h>
 #include <openssl/param_build.h>
 #endif
+#include <algorithm>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 #include <sf_utils/sf_utils.h>
@@ -60,13 +61,15 @@ CK_FLAGS PKCS11_SfModule::getFlags() const
 void PKCS11_SfModule::getDescription(CK_UTF8CHAR* dstParm, uint64_t sizeParm) const
 {
     memset(dstParm, ' ', sizeParm);
-    memcpy(dstParm, mLibraryDescription.c_str(), std::min(sizeParm, static_cast<uint64_t>(mLibraryDescription.size())));
+    memcpy(dstParm,
+           mLibraryDescription.c_str(),
+           std::min<uint64_t>(sizeParm, mLibraryDescription.size()));
 }
 
 void PKCS11_SfModule::getManufacturerId(CK_UTF8CHAR* dstParm, uint64_t sizeParm) const
 {
     memset(dstParm, ' ', sizeParm);
-    memcpy(dstParm, mManufacturerID.c_str(), std::min(sizeParm, static_cast<uint64_t>(mManufacturerID.size())));
+    memcpy(dstParm, mManufacturerID.c_str(), std::min<uint64_t>(sizeParm, mManufacturerID.size()));
 }
 
 CK_VERSION PKCS11_SfModule::getCryptokiVersion() const { return mCryptokiVersion; }
@@ -77,20 +80,17 @@ bool PKCS11_SfModule::openServerConnection(std::string urlParm,
                                            std::string epwdParm,
                                            std::string pkeyParm)
 {
-
-    // if(mServerPassword.empty())
-    //    return false;
-
     mUrl            = urlParm;
     mEpwdPath       = epwdParm;
     mPrivateKeyPath = pkeyParm;
 
-    sf_client::ServerInfoV1 sSfServerV1;
+    sf_client::ServerInfo sSfServerV1;
     sSfServerV1.mCurlDebug      = false;
-    sSfServerV1.mPasswordPtr    = mServerPassword.c_str();
     sSfServerV1.mPrivateKeyPath = mPrivateKeyPath;
     sSfServerV1.mEpwdPath       = mEpwdPath;
     sSfServerV1.mUrl            = mUrl;
+    sSfServerV1.mUseSshAgent    = true;
+    sSfServerV1.mPasswordPtr    = NULL;
 #ifdef DEBUG
     sSfServerV1.mVerbose = true;
 #else
@@ -100,10 +100,9 @@ bool PKCS11_SfModule::openServerConnection(std::string urlParm,
     sf_client::rc sRc = sf_client::connectToServer(sSfServerV1, mSfClientSession);
 
 #ifdef DEBUG
-    std::cout << "Open Connection RC: " << std::hex << sRc << std::dec << std::endl;
+    std::cout << "sf_client rc: " << std::dec << sRc << std::dec << std::endl;
     if(sf_client::success != sRc)
     {
-        // std::cout << "Password " << mServerPassword << std::endl;
         std::cout << "PrivateKeyPath " << mPrivateKeyPath << std::endl;
         std::cout << "Url " << mUrl << std::endl;
     }
@@ -122,12 +121,12 @@ bool PKCS11_SfModule::initObjects(const PKCS11_SF_SESSION_CONFIG& configParm)
 
         std::cout << "Query server for project: " << sProject.mName << std::endl;
 
-        sf_client::CommandArgsV1 sArgsV1;
+        sf_client::CommandArgs sArgsV1;
         sArgsV1.mProject          = "getpubkey";
         sArgsV1.mComment          = "PKCS11: get pub key to populate library keys";
         sArgsV1.mExtraServerParms = "-format pem -signproject " + sProject.mName;
 
-        sf_client::CommandResponseV1 sResponse;
+        sf_client::CommandResponse sResponse;
 
         sf_client::rc sRc = sf_client::sendCommandV1(mSfClientSession, sArgsV1, sResponse);
 
@@ -155,22 +154,22 @@ bool PKCS11_SfModule::initObjects(const PKCS11_SF_SESSION_CONFIG& configParm)
                              sResponse.mOutput.data() + sResponse.mOutput.size());
             BIO_puts(sMemoryBio, sPEM.c_str());
             // FIXME: Add some error handling for NULL pointers
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-            EVP_PKEY* sPubKey = PEM_read_bio_PUBKEY(sMemoryBio, NULL, NULL, NULL);
-            BIGNUM* sModulusBN        = NULL;
-            int rc = EVP_PKEY_get_bn_param(sPubKey, OSSL_PKEY_PARAM_RSA_N, &sModulusBN);
-            if (rc != 1)
+#if(OPENSSL_VERSION_NUMBER >= 0x30000000L)
+            EVP_PKEY* sPubKey    = PEM_read_bio_PUBKEY(sMemoryBio, NULL, NULL, NULL);
+            BIGNUM*   sModulusBN = NULL;
+            int       rc = EVP_PKEY_get_bn_param(sPubKey, OSSL_PKEY_PARAM_RSA_N, &sModulusBN);
+            if(rc != 1)
             {
                 std::cout << "Error getting N parameter" << std::endl;
             }
             BIGNUM* sPublicExponentBN = NULL;
             rc = EVP_PKEY_get_bn_param(sPubKey, OSSL_PKEY_PARAM_RSA_E, &sPublicExponentBN);
-            if (rc != 1)
+            if(rc != 1)
             {
                 std::cout << "Error getting E parameter" << std::endl;
             }
 #else
-            RSA* sPubKey = PEM_read_bio_RSA_PUBKEY(sMemoryBio, NULL, NULL, NULL);
+            RSA*          sPubKey           = PEM_read_bio_RSA_PUBKEY(sMemoryBio, NULL, NULL, NULL);
             const BIGNUM* sModulusBN        = RSA_get0_n(sPubKey);
             const BIGNUM* sPublicExponentBN = RSA_get0_e(sPubKey);
 #endif
@@ -201,7 +200,7 @@ bool PKCS11_SfModule::initObjects(const PKCS11_SF_SESSION_CONFIG& configParm)
 #endif
 
             if(sPubKey)
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#if(OPENSSL_VERSION_NUMBER >= 0x30000000L)
                 EVP_PKEY_free(sPubKey);
 #else
                 RSA_free(sPubKey);
@@ -234,17 +233,3 @@ bool PKCS11_SfModule::closeServerConnection()
     sf_client::disconnect(mSfClientSession);
     return true;
 }
-
-bool PKCS11_SfModule::promptPassword()
-{
-    char sPassword[1024];
-
-    uint64_t sBytesWritten = 0;
-    bool     sIsSuccess    = GetPassword(sPassword, sizeof(sPassword), sBytesWritten, false);
-
-    mServerPassword = std::string(sPassword, sPassword + sBytesWritten);
-
-    return sIsSuccess;
-}
-
-const std::string& PKCS11_SfModule::getPassword() const { return mServerPassword; }
