@@ -87,7 +87,7 @@ bool GetPassword(char*          dstParm,
     fflush(stdout);
 
     char        sChar             = getchar();
-    uint64_t sPassphraseLength = 0;
+    std::size_t sPassphraseLength = 0;
 
     while(sChar != '\n' && sChar != '\f' && sChar != '\r')
     {
@@ -167,6 +167,21 @@ bool ReadFile(const std::string& filePathParm, std::vector<uint8_t>& dstParm)
         std::cout << "filename empty" << std::endl;
     }
 
+    return false;
+}
+
+bool IsPathWriteable(const std::string& filePathParm)
+{
+    std::ofstream sFile;
+    if(!filePathParm.empty())
+    {
+        sFile.open(filePathParm.c_str(), std::ios::out | std::ios::app | std::ios::binary);
+        if(sFile.is_open())
+        {
+            sFile.close();
+            return true;
+        }
+    }
     return false;
 }
 
