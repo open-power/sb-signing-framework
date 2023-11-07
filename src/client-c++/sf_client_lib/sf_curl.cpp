@@ -256,19 +256,29 @@ sf_client::rc sf_client::curlConnectToServer(const Curl_ServerInfo& serverInfoPa
     if(serverInfoParm.mUseSshAgent)
     {
         // Restrict CURL session to ONLY use SSH_AGENT and fail otherwise
-        SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_AGENT);
+
+        // Note: The CURLSSH_AUTH variable for enabling ssh-agent seems to be variable depending on
+        // OS. On MacOS 'CURLSSH_AUTH_AGENT' enables usage of ssh-agent, while on RHEL8
+        // CURLSSH_AUTH_PUBLICKEY is used.
+        // In order to handle this, both AUTHs must be specified here.
+        SET_CURL_OPTION(sRc,
+                        curlSessionParm,
+                        CURLOPT_SSH_AUTH_TYPES,
+                        CURLSSH_AUTH_AGENT | CURLSSH_AUTH_PUBLICKEY);
     }
     else
     {
         // Restrict CURL session to ONLY use private key file directly and fail otherwise
         SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_SSH_AUTH_TYPES, CURLSSH_AUTH_PUBLICKEY);
+
+        // Set the private key if it was provided
+        if(0 != serverInfoParm.mPrivateKeyPath.length())
+            SET_CURL_OPTION(sRc,
+                            curlSessionParm,
+                            CURLOPT_SSH_PRIVATE_KEYFILE,
+                            serverInfoParm.mPrivateKeyPath.c_str());
     }
 
-    if(0 != serverInfoParm.mPrivateKeyPath.length())
-        SET_CURL_OPTION(sRc,
-                        curlSessionParm,
-                        CURLOPT_SSH_PRIVATE_KEYFILE,
-                        serverInfoParm.mPrivateKeyPath.c_str());
     if(0 != serverInfoParm.mPublicKeyPath.length())
         SET_CURL_OPTION(sRc,
                         curlSessionParm,
