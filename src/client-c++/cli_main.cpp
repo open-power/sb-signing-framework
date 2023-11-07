@@ -675,11 +675,14 @@ int main(int argc, char** argv)
 
     if(sIsSuccess)
     {
-        std::cout << std::endl;
-        std::cout << "==== Begin Standard Out ====" << std::endl;
-        std::cout << std::endl;
-        std::cout << sSfResponse.mStdOut << std::endl;
-        std::cout << "==== End of Standard Out ====" << std::endl;
+        if(!sSfResponse.mStdOut.empty())
+        {
+            std::cout << std::endl;
+            std::cout << "==== Begin Standard Out ====" << std::endl;
+            std::cout << std::endl;
+            std::cout << sSfResponse.mStdOut << std::endl;
+            std::cout << "==== End of Standard Out ====" << std::endl;
+        }
 
         if(0 != sSfResponse.mReturnCode)
         {
