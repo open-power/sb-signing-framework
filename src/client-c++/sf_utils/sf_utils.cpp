@@ -152,7 +152,8 @@ bool ReadFile(const std::string& filePathParm, std::vector<uint8_t>& dstParm)
             dstParm.reserve(sFileByteSize);
             dstParm.assign(sFileByteSize, 0);
 
-            sFile.read((char*)dstParm.data(), sFileByteSize);
+            // AIX 7.2 std::vector does not define vector::data()
+            sFile.read((char*)&(dstParm[0]), sFileByteSize);
             sFile.close();
 
             return true;
@@ -193,7 +194,8 @@ bool WriteFile(const std::string& filePathParm, const std::vector<uint8_t>& srcP
         sFile.open(filePathParm.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
         if(sFile.is_open())
         {
-            sFile.write((const char*)srcParm.data(), srcParm.size());
+            // AIX 7.2 std::vector does not define vector::data()
+            sFile.write((const char*)&(srcParm[0]), srcParm.size());
             sFile.close();
             return true;
         }

@@ -358,11 +358,15 @@ void PrintHelp(const std::string& programNameParm)
     }
 
     std::cout << "Usage: " << programNameParm << std::endl;
+    std::cout << "Version: C++";
 #ifdef NO_GETOPT_LONG
-    std::cout << "Version: C++ NO_GETOPT_LONG" << std::endl;
-#else
-    std::cout << "Version: C++" << std::endl;
+    std::cout << " NO_GETOPT_LONG";
 #endif
+#ifdef NO_SECURE_HEAP
+    std::cout << " NO_SECURE_HEAP";
+#endif
+    std::cout << std::endl;
+
 #ifdef GIT_HASH
     std::cout << "GIT: " << GIT_HASH << std::endl;
 #endif
@@ -433,13 +437,15 @@ int main(int argc, char** argv)
         return -1; // Early return for simplicity
     }
 
-    // Setup the OPENSSL secure heap:
+// Setup the OPENSSL secure heap:
+#ifndef NO_SECURE_HEAP
     int malloc_init_rc = CRYPTO_secure_malloc_init(64 * 1024, 0x10);
     if(1 != malloc_init_rc)
     {
         std::cout << "Unable to allocate and protect secure heap, exiting..." << std::endl;
         return -1;
     }
+#endif
 
     if(sIsSuccess)
     {
@@ -654,7 +660,7 @@ int main(int argc, char** argv)
 
     if(sIsSuccess)
     {
-        sf_client::rc sRc = sf_client::rc::success;
+        sf_client::rc sRc = sf_client::success;
         if(sSfArgs.mMode.empty())
         {
             // No "mode" specified, send a V1 formatted request to the server
@@ -713,7 +719,9 @@ int main(int argc, char** argv)
     else
         std::cout << "sf_client: FAILED" << std::endl;
 
+#ifndef NO_SECURE_HEAP
     CRYPTO_secure_malloc_done();
+#endif
 
     return (sIsSuccess) ? sSfResponse.mReturnCode : -1;
 }
