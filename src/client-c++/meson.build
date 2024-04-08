@@ -14,6 +14,10 @@ if get_option('getopt_long') == false
   add_global_arguments('-DNO_GETOPT_LONG', language: 'cpp')
 endif
 
+if get_option('secure_heap') == false
+  add_global_arguments('-DNO_SECURE_HEAP', language: 'cpp')
+endif
+
 cc = meson.get_compiler('cpp')
 
 git_version = vcs_tag(command: ['git', 'rev-parse', '--short', 'HEAD'],
