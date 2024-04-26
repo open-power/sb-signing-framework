@@ -412,6 +412,33 @@ void Verbose_PrintArgs(const SfClientArgs& argsParm)
     std::cout << "Debug:    " << (argsParm.mDebug ? "true" : "false") << std::endl;
 }
 
+#define CASE_RC_TO_STRING_AND_RETURN(value)                                                        \
+    case value:                                                                                    \
+        return std::string(#value) + "(" + std::to_string(value) + ")"
+
+std::string getHumanReadableReturnCode(const sf_client::rc rcParm)
+{
+    switch(rcParm)
+    {
+        CASE_RC_TO_STRING_AND_RETURN(sf_client::success);
+        CASE_RC_TO_STRING_AND_RETURN(sf_client::failure);
+        CASE_RC_TO_STRING_AND_RETURN(sf_client::invalid_parm);
+        CASE_RC_TO_STRING_AND_RETURN(sf_client::password_retry);
+        CASE_RC_TO_STRING_AND_RETURN(sf_client::pkey_not_encrypted);
+        CASE_RC_TO_STRING_AND_RETURN(sf_client::json_new_obj_fail);
+        CASE_RC_TO_STRING_AND_RETURN(sf_client::json_convert_to_string_fail);
+        CASE_RC_TO_STRING_AND_RETURN(sf_client::json_invalid_parm);
+        CASE_RC_TO_STRING_AND_RETURN(sf_client::json_invalid_object_type);
+        CASE_RC_TO_STRING_AND_RETURN(sf_client::json_tag_not_found);
+        CASE_RC_TO_STRING_AND_RETURN(sf_client::json_parse_root_fail);
+        CASE_RC_TO_STRING_AND_RETURN(sf_client::epwd_read_fail);
+        CASE_RC_TO_STRING_AND_RETURN(sf_client::curl_failure);
+        CASE_RC_TO_STRING_AND_RETURN(sf_client::curl_init_failure);
+    default:
+        return std::to_string(rcParm);
+    }
+}
+
 int main(int argc, char** argv)
 {
 
@@ -647,7 +674,7 @@ int main(int argc, char** argv)
             }
             else
             {
-                std::cout << "Unable to connect to server, rc = " << sRc << std::endl;
+                std::cout << "Unable to connect to server, rc = " << getHumanReadableReturnCode(sRc) << std::endl;
             }
         }
     }
@@ -675,7 +702,7 @@ int main(int argc, char** argv)
         if(sf_client::success != sRc)
         {
             sIsSuccess = false;
-            std::cout << "Send Command Failed with rc: " << (int)sRc << std::endl;
+            std::cout << "Send Command Failed with rc: " << getHumanReadableReturnCode(sRc) << std::endl;
         }
     }
 
