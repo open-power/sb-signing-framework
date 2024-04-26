@@ -279,3 +279,56 @@ sf_client::rc sf_client::parseCommandResponseJsonV1(const std::string&      json
 
     return sRc;
 }
+
+std::string
+sf_client::redactTagsFromJsonStringForDebug(const std::string&              jsonParm,
+                                            const std::vector<std::string>& tagsToRedactParm)
+{
+    std::string sRedactedJson                = jsonParm;
+    bool        sHasRedactedTagBeenFound     = false; // If an tag eligible for redaction is found
+    bool        sHasRedactedTagRemovalFailed = false; // If the data could not be found for a tag
+    for(const std::string& sTag : tagsToRedactParm)
+    {
+        std::size_t sPosition      = sRedactedJson.find(sTag);
+        std::size_t sIndexAfterTag = sPosition + sTag.length() + 1; // +1 for closing '"'
+        if(std::string::npos != sPosition)
+        {
+            // The tag was found
+            sHasRedactedTagBeenFound  = true;
+            bool sTagRedactionSuccess = false;
+            // Find the next " in the json (start of data to remove)
+            std::size_t sPositionParenthesisLhs = sRedactedJson.find('"', sIndexAfterTag);
+            if(std::string::npos != sPositionParenthesisLhs)
+            {
+                // Find the next ", (end of data to be removed)
+                std::size_t sPositionParenthesisRhs = sRedactedJson.find(
+                    '"', sPositionParenthesisLhs + 1);
+                if(std::string::npos != sPositionParenthesisRhs)
+                {
+                    // Erase the data
+                    std::size_t sBytesToRemove = sPositionParenthesisRhs - sPositionParenthesisLhs
+                                                 - 1;
+                    sRedactedJson.erase(sPositionParenthesisLhs + 1, sBytesToRemove);
+
+                    // Write the length back to help with debug
+                    sRedactedJson.insert(sPositionParenthesisLhs + 1,
+                                         std::string("REDACTED(") + std::to_string(sBytesToRemove)
+                                             + ")");
+                    sTagRedactionSuccess = true;
+                }
+            }
+
+            sHasRedactedTagRemovalFailed = sHasRedactedTagRemovalFailed || !sTagRedactionSuccess;
+        }
+    }
+
+    if(sHasRedactedTagBeenFound && sHasRedactedTagRemovalFailed)
+    {
+        // The redaction failed at some point, give up and redact the whole JSON
+        return "<JSON REDACTED>";
+    }
+    else
+    {
+        return sRedactedJson;
+    }
+}
