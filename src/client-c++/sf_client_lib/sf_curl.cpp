@@ -25,6 +25,13 @@
 #include <unistd.h>
 
 #include "sf_curl.h"
+#include "sf_json.h"
+
+// Values to removed from the JSON going to the server if it is printed to the console
+// - epwd: contains the CCA encrypted password
+// - payload: can contain the CCA encrypted password (on a epwd change)
+// - result: can contain the new CCA encrypted password (on a epwd change)
+const std::vector<std::string> TagsToRedact = {"epwd", "payload", "result"};
 
 #define SET_CURL_OPTION(return_code, session, option, value)                                       \
     if(CURLE_OK == (return_code))                                                                  \
@@ -138,7 +145,9 @@ CURLcode WriteToServer(sf_client::Curl_Session& curlSessionParm,
     CURLcode sRc = CURLE_OK;
     if(curlSessionParm.mVerbose)
     {
-        std::cout << "WRITE_TO_SERVER: " << srcParm << std::endl;
+        std::cout << "WRITE_TO_SERVER: "
+                  << sf_client::redactTagsFromJsonStringForDebug(srcParm, TagsToRedact)
+                  << std::endl;
     }
 
     SET_CURL_OPTION(sRc, curlSessionParm, CURLOPT_URL, urlParm.c_str());
@@ -222,7 +231,9 @@ CURLcode ReadFromServer(sf_client::Curl_Session& curlSessionParm,
 
     if(curlSessionParm.mVerbose && (CURLE_OK == sRc))
     {
-        std::cout << "READ_FROM_SERVER: " << dstParm << std::endl;
+        std::cout << "READ_FROM_SERVER: "
+                  << sf_client::redactTagsFromJsonStringForDebug(dstParm, TagsToRedact)
+                  << std::endl;
     }
 
     return sRc;

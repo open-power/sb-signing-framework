@@ -66,6 +66,9 @@ namespace sf_client
     rc createCommandRequestJsonV2(const Json_CommandRequestV2& requestParm,
                                   std::string&                 dstJsonParm);
 
+    std::string redactTagsFromJsonStringForDebug(const std::string&              jsonParm,
+                                                 const std::vector<std::string>& tagsToRedactParm);
+
 } // namespace sf_client
 
 #endif
