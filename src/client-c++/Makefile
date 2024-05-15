@@ -3,8 +3,8 @@ CINCLUDE += -Isf_utils/include -Isf_client_lib/include
 CFLAGS += -O2
 
 ifeq ($(shell uname),AIX)
-	CFLAGS+=-qlanglvl=extended0x -DNO_GETOPT_LONG -DNO_SECURE_HEAP
-	CXX=xlC
+	CFLAGS+=-std=c++11 -Wall -Wextra -DNO_GETOPT_LONG -DNO_SECURE_HEAP
+	CXX=/opt/freeware/bin/g++
 	CINCLUDE += -I/opt/freeware/include
 	CLIBPATH += -L/opt/freeware/lib
 else
