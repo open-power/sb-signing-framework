@@ -31,7 +31,17 @@
 // - epwd: contains the CCA encrypted password
 // - payload: can contain the CCA encrypted password (on a epwd change)
 // - result: can contain the new CCA encrypted password (on a epwd change)
-const std::vector<std::string> TagsToRedact = {"epwd", "payload", "result"};
+
+const std::vector<std::string> createTagsToRedact()
+{
+    std::vector<std::string> temp;
+    temp.push_back("epwd");
+    temp.push_back("payload");
+    temp.push_back("result");
+    return temp;
+}
+
+const std::vector<std::string> TagsToRedact = createTagsToRedact();
 
 #define SET_CURL_OPTION(return_code, session, option, value)                                       \
     if(CURLE_OK == (return_code))                                                                  \

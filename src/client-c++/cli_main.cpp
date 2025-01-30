@@ -25,6 +25,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <vector>
+#include <sstream>
 
 #include "git_hash.h"
 
@@ -412,9 +413,17 @@ void Verbose_PrintArgs(const SfClientArgs& argsParm)
     std::cout << "Debug:    " << (argsParm.mDebug ? "true" : "false") << std::endl;
 }
 
+template <typename T>
+std::string to_string_custom(const T& value)
+{
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
+
 #define CASE_RC_TO_STRING_AND_RETURN(value)                                                        \
     case value:                                                                                    \
-        return std::string(#value) + "(" + std::to_string(value) + ")"
+        return std::string(#value) + "(" + to_string_custom(value) + ")"
 
 std::string getHumanReadableReturnCode(const sf_client::rc rcParm)
 {
@@ -435,7 +444,7 @@ std::string getHumanReadableReturnCode(const sf_client::rc rcParm)
         CASE_RC_TO_STRING_AND_RETURN(sf_client::curl_failure);
         CASE_RC_TO_STRING_AND_RETURN(sf_client::curl_init_failure);
     default:
-        return std::to_string(rcParm);
+        return to_string_custom(rcParm);
     }
 }
 

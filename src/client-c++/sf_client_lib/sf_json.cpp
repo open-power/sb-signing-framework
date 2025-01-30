@@ -280,6 +280,14 @@ sf_client::rc sf_client::parseCommandResponseJsonV1(const std::string&      json
     return sRc;
 }
 
+template <typename T>
+std::string to_string_custom(const T& value)
+{
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
+
 std::string
 sf_client::redactTagsFromJsonStringForDebug(const std::string&              jsonParm,
                                             const std::vector<std::string>& tagsToRedactParm)
@@ -287,8 +295,9 @@ sf_client::redactTagsFromJsonStringForDebug(const std::string&              json
     std::string sRedactedJson                = jsonParm;
     bool        sHasRedactedTagBeenFound     = false; // If an tag eligible for redaction is found
     bool        sHasRedactedTagRemovalFailed = false; // If the data could not be found for a tag
-    for(const std::string& sTag : tagsToRedactParm)
+    for(size_t i = 0; i < tagsToRedactParm.size(); ++i)
     {
+        const std::string& sTag = tagsToRedactParm[i];
         std::size_t sPosition      = sRedactedJson.find(sTag);
         std::size_t sIndexAfterTag = sPosition + sTag.length() + 1; // +1 for closing '"'
         if(std::string::npos != sPosition)
@@ -312,7 +321,7 @@ sf_client::redactTagsFromJsonStringForDebug(const std::string&              json
 
                     // Write the length back to help with debug
                     sRedactedJson.insert(sPositionParenthesisLhs + 1,
-                                         std::string("REDACTED(") + std::to_string(sBytesToRemove)
+                                         std::string("REDACTED(") + to_string_custom(sBytesToRemove)
                                              + ")");
                     sTagRedactionSuccess = true;
                 }
