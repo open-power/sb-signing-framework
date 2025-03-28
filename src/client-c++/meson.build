@@ -25,6 +25,8 @@ git_version = vcs_tag(command: ['git', 'rev-parse', '--short', 'HEAD'],
                       output : 'git_hash.h',
                       replace_string: '@GIT_VERSION@')
 
+include_directories('build')
+
 if( get_option('verbose') == true )
   add_global_arguments('-DDEBUG', language: 'cpp')
 endif
