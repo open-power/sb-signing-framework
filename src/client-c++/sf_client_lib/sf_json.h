@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <json-c/json.h>
 #include <sf_client/sf_rc.h>
 #include <stdint.h>
 #include <string>
@@ -43,11 +44,35 @@ namespace sf_client
         std::vector<uint8_t> mPayload;
     };
 
+    struct Json_CommandRequestV3
+    {
+        std::string  mMode;
+        std::string  mProject;
+        std::string  mParms;
+        std::string  mComment;
+        std::string  mEpwd;
+        json_object* mPayload;
+    };
+
     struct Json_CommandResponseV1
     {
         std::vector<uint8_t> mResult;
         std::string          mStandardOut;
         int                  mReturnValue;
+
+        void clear()
+        {
+            mResult.clear();
+            mStandardOut.clear();
+            mReturnValue = 0;
+        };
+    };
+
+    struct Json_CommandResponseV3
+    {
+        std::string  mResult;
+        std::string  mStandardOut;
+        int          mReturnValue;
 
         void clear()
         {
@@ -65,6 +90,12 @@ namespace sf_client
 
     rc createCommandRequestJsonV2(const Json_CommandRequestV2& requestParm,
                                   std::string&                 dstJsonParm);
+
+    rc createCommandRequestJsonV3(const Json_CommandRequestV3& requestParm,
+                                  std::string&                 dstJsonParm);
+
+    rc parseCommandResponseJsonV3(const std::string&      jsonParm,
+                                  Json_CommandResponseV3& dstResponseParm);
 
     std::string redactTagsFromJsonStringForDebug(const std::string&              jsonParm,
                                                  const std::vector<std::string>& tagsToRedactParm);

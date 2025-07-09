@@ -167,10 +167,12 @@ sf_client::rc sf_client::sendCommandV1(Session&                      sessionParm
     {
         sJsonRequest.mComment          = argsParm.mComment;
         sJsonRequest.mParms            = argsParm.mExtraServerParms;
-        sJsonRequest.mPayload          = argsParm.mPayload;
         sJsonRequest.mProject          = argsParm.mProject;
         sJsonRequest.mSelfReportedUser = GetLocalUser() + "@" + GetLocalHost();
+    }
 
+    if(success == sRc)
+    {
         sRc = createCommandRequestJsonV1(sJsonRequest, sJsonRequestString);
     }
 
@@ -248,6 +250,68 @@ sf_client::rc sf_client::sendCommandV2(Session&                      sessionParm
     if(success == sRc)
     {
         responseParm.mOutput     = sJsonResponse.mResult;
+        responseParm.mStdOut     = sJsonResponse.mStandardOut;
+        responseParm.mReturnCode = sJsonResponse.mReturnValue;
+    }
+
+    return sRc;
+}
+
+sf_client::rc sf_client::sendCommandV3(Session&                      sessionParm,
+                                       const sf_client::CommandArgs& argsParm,
+                                       sf_client::CommandResponse&   responseParm)
+{
+    rc sRc = success;
+
+    std::string sJsonRequestString;
+    std::string sJsonResponseString;
+
+    Json_CommandRequestV3  sJsonRequest;
+    Json_CommandResponseV3 sJsonResponse;
+
+    if(success == sRc && !sessionParm.mCurlSession->mEpwdPath.empty())
+    {
+        std::vector<uint8_t> sEpwdBinary;
+        bool sIsSuccess = ReadFile(sessionParm.mCurlSession->mEpwdPath, sEpwdBinary);
+        if(sIsSuccess)
+        {
+            // File is ASCII, copy directly into the string.
+            sJsonRequest.mEpwd = std::string(sEpwdBinary.begin(), sEpwdBinary.end());
+            RemoveAllWhitespace(sJsonRequest.mEpwd);
+        }
+        else
+        {
+            sRc = epwd_read_fail;
+        }
+    }
+
+    if(success == sRc)
+    {
+        sJsonRequest.mMode    = argsParm.mMode;
+        sJsonRequest.mProject = argsParm.mProject;
+        sJsonRequest.mComment = argsParm.mComment;
+        sJsonRequest.mParms   = argsParm.mExtraServerParms;
+
+        std::string sJsonPayloadStr(argsParm.mPayload.begin(), argsParm.mPayload.end());
+        sJsonRequest.mPayload = json_tokener_parse(sJsonPayloadStr.c_str());
+
+        sRc = createCommandRequestJsonV3(sJsonRequest, sJsonRequestString);
+    }
+
+    if(success == sRc)
+    {
+        sRc = sendAndReceiveCommand(
+            *sessionParm.mCurlSession, sJsonRequestString, sJsonResponseString);
+    }
+
+    if(success == sRc)
+    {
+        sRc = parseCommandResponseJsonV3(sJsonResponseString, sJsonResponse);
+    }
+
+    if(success == sRc)
+    {
+        responseParm.mOutput.assign(sJsonResponse.mResult.begin(), sJsonResponse.mResult.end());
         responseParm.mStdOut     = sJsonResponse.mStandardOut;
         responseParm.mReturnCode = sJsonResponse.mReturnValue;
     }

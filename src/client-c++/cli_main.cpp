@@ -62,6 +62,7 @@ enum OptOptions
     PasswordEnvVar,
     Param,
     Output,
+    Batch,
     Verbose,
     Debug,
     Help,
@@ -88,6 +89,7 @@ struct option create_long_options[NumOptOptions + 1] =
     {"password", required_argument, NULL, 'a'},
     {"param",    required_argument, NULL, 'r'},
     {"output",   required_argument, NULL, 'o'},
+    {"batch",    no_argument,       NULL, 'b'},
     {"verbose",  no_argument,       NULL, 'v'},
     {"debug",    no_argument,       NULL, 'd'},
     {"help",     no_argument,       NULL, 'h'},
@@ -108,6 +110,7 @@ const std::string OptOptionsHelpText[NumOptOptions] =
     "Environment variable to read the password from",
     "Parameters to be passed to the signing framework. Ex '-v' or '-h'",
     "output file to save the return payload",
+    "Specifies whether the input contains a batched payload",
     "verbose tracing",
     "debug mode",
     "Display help text",
@@ -117,7 +120,8 @@ const std::string OptOptionsHelpText[NumOptOptions] =
 struct SfClientArgs
 {
     SfClientArgs()
-    : mVerbose(false)
+    : mIsBatchRequest(false)
+    , mVerbose(false)
     , mDebug(false)
     , mHelp(false)
     {
@@ -132,6 +136,7 @@ struct SfClientArgs
     std::string mExtraServerParms;
     std::string mOutputPath;
     std::string mPasswordEnvVar;
+    bool        mIsBatchRequest;
     bool        mVerbose;
     bool        mDebug;
     bool        mHelp;
@@ -330,6 +335,10 @@ bool ParseArgs(const int argcParm, char** argvParm, SfClientArgs& argsParm)
         {
             argsParm.mOutputPath = optarg;
         }
+        else if(sOption == create_long_options[Batch].val)
+        {
+            argsParm.mIsBatchRequest = true;
+        }
         else if(sOption == create_long_options[Verbose].val)
         {
             argsParm.mVerbose = true;
@@ -407,6 +416,7 @@ void Verbose_PrintArgs(const SfClientArgs& argsParm)
     std::cout << "Extra Server Parms: " << argsParm.mExtraServerParms << std::endl;
     std::cout << "Output Path:        " << argsParm.mOutputPath << std::endl;
     std::cout << "Password ENV:        " << argsParm.mPasswordEnvVar << std::endl;
+    std::cout << "Batch Request: "      << argsParm.mIsBatchRequest << std::endl;
     std::cout << std::endl;
     std::cout << "Verbose:  " << (argsParm.mVerbose ? "true" : "false") << std::endl;
     std::cout << "Debug:    " << (argsParm.mDebug ? "true" : "false") << std::endl;
@@ -674,7 +684,8 @@ int main(int argc, char** argv)
             }
             else
             {
-                std::cout << "Unable to connect to server, rc = " << getHumanReadableReturnCode(sRc) << std::endl;
+                std::cout << "Unable to connect to server, rc = " << getHumanReadableReturnCode(sRc)
+                          << std::endl;
             }
         }
     }
@@ -688,21 +699,31 @@ int main(int argc, char** argv)
     if(sIsSuccess)
     {
         sf_client::rc sRc = sf_client::success;
-        if(sSfArgs.mMode.empty())
+        if(sSfArgs.mMode.empty() && !sArgs.mIsBatchRequest)
         {
             // No "mode" specified, send a V1 formatted request to the server
             sRc = sf_client::sendCommandV1(sSession, sSfArgs, sSfResponse);
         }
-        else
+        else if(!sSfArgs.mMode.empty() && !sArgs.mIsBatchRequest)
         {
             // "mode" is specified, send a V2 formatted request to the server
             sRc = sf_client::sendCommandV2(sSession, sSfArgs, sSfResponse);
+        }
+        else if(!sSfArgs.mMode.empty() && sArgs.mIsBatchRequest)
+        {
+            // "mode" and "batch_request" specified, send a V3 formatted request to the server
+            sRc = sf_client::sendCommandV3(sSession, sSfArgs, sSfResponse);
+        }
+        else
+        {
+            sRc = sf_client::failure;
         }
 
         if(sf_client::success != sRc)
         {
             sIsSuccess = false;
-            std::cout << "Send Command Failed with rc: " << getHumanReadableReturnCode(sRc) << std::endl;
+            std::cout << "Send Command Failed with rc: " << getHumanReadableReturnCode(sRc)
+                      << std::endl;
         }
     }
 
