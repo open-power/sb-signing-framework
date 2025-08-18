@@ -56,6 +56,7 @@ endif
 executable(
     'sf_client',
     'cli_main.cpp',
+    git_version,
     dependencies: [
         sf_client_dep
     ],
