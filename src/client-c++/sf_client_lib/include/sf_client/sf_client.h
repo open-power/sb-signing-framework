@@ -83,6 +83,9 @@ namespace sf_client
 
     rc
     sendCommandV2(Session& sessionParm, const CommandArgs& argsParm, CommandResponse& responseParm);
+
+    rc
+    sendCommandV3(Session& sessionParm, const CommandArgs& argsParm, CommandResponse& responseParm);
 } // namespace sf_client
 
 #endif
