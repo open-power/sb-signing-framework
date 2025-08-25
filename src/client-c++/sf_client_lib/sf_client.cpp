@@ -168,11 +168,8 @@ sf_client::rc sf_client::sendCommandV1(Session&                      sessionParm
         sJsonRequest.mComment          = argsParm.mComment;
         sJsonRequest.mParms            = argsParm.mExtraServerParms;
         sJsonRequest.mProject          = argsParm.mProject;
+        sJsonRequest.mPayload          = argsParm.mPayload;
         sJsonRequest.mSelfReportedUser = GetLocalUser() + "@" + GetLocalHost();
-    }
-
-    if(success == sRc)
-    {
         sRc = createCommandRequestJsonV1(sJsonRequest, sJsonRequestString);
     }
 
