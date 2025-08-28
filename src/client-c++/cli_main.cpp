@@ -62,6 +62,7 @@ enum OptOptions
     PasswordEnvVar,
     Param,
     Output,
+    Batch,
     Verbose,
     Debug,
     Help,
@@ -88,6 +89,7 @@ struct option create_long_options[NumOptOptions + 1] =
     {"password", required_argument, NULL, 'a'},
     {"param",    required_argument, NULL, 'r'},
     {"output",   required_argument, NULL, 'o'},
+    {"batch",    no_argument,       NULL, 'b'},
     {"verbose",  no_argument,       NULL, 'v'},
     {"debug",    no_argument,       NULL, 'd'},
     {"help",     no_argument,       NULL, 'h'},
@@ -108,6 +110,7 @@ const std::string OptOptionsHelpText[NumOptOptions] =
     "Environment variable to read the password from",
     "Parameters to be passed to the signing framework. Ex '-v' or '-h'",
     "output file to save the return payload",
+    "Specifies whether the input contains a batched payload",
     "verbose tracing",
     "debug mode",
     "Display help text",
@@ -117,7 +120,8 @@ const std::string OptOptionsHelpText[NumOptOptions] =
 struct SfClientArgs
 {
     SfClientArgs()
-    : mVerbose(false)
+    : mIsBatchRequest(false)
+    , mVerbose(false)
     , mDebug(false)
     , mHelp(false)
     {
@@ -132,6 +136,7 @@ struct SfClientArgs
     std::string mExtraServerParms;
     std::string mOutputPath;
     std::string mPasswordEnvVar;
+    bool        mIsBatchRequest;
     bool        mVerbose;
     bool        mDebug;
     bool        mHelp;
@@ -330,6 +335,10 @@ bool ParseArgs(const int argcParm, char** argvParm, SfClientArgs& argsParm)
         {
             argsParm.mOutputPath = optarg;
         }
+        else if(sOption == create_long_options[Batch].val)
+        {
+            argsParm.mIsBatchRequest = true;
+        }
         else if(sOption == create_long_options[Verbose].val)
         {
             argsParm.mVerbose = true;
@@ -406,7 +415,8 @@ void Verbose_PrintArgs(const SfClientArgs& argsParm)
     std::cout << "Payload Path:       " << argsParm.mPayloadPath << std::endl;
     std::cout << "Extra Server Parms: " << argsParm.mExtraServerParms << std::endl;
     std::cout << "Output Path:        " << argsParm.mOutputPath << std::endl;
-    std::cout << "Password ENV:        " << argsParm.mPasswordEnvVar << std::endl;
+    std::cout << "Password ENV:       " << argsParm.mPasswordEnvVar << std::endl;
+    std::cout << "Batch Request:      " << argsParm.mIsBatchRequest << std::endl;
     std::cout << std::endl;
     std::cout << "Verbose:  " << (argsParm.mVerbose ? "true" : "false") << std::endl;
     std::cout << "Debug:    " << (argsParm.mDebug ? "true" : "false") << std::endl;
@@ -442,8 +452,9 @@ std::string getHumanReadableReturnCode(const sf_client::rc rcParm)
 int main(int argc, char** argv)
 {
 
-    std::string sProgramName = argv[0];
-    bool        sIsSuccess   = true;
+    std::string                  sProgramName       = argv[0];
+    bool                         sIsSuccess         = true;
+    sf_client::CommandApiVersion sCommandApiVersion = sf_client::Version1;
 
     sf_client::ServerInfo      sSfServer;
     sf_client::CommandArgs     sSfArgs;
@@ -581,6 +592,26 @@ int main(int argc, char** argv)
         sSfArgs.mProject          = sArgs.mProject;
         sSfArgs.mComment          = sArgs.mComment;
         sSfArgs.mExtraServerParms = sArgs.mExtraServerParms;
+
+        if(!sSfArgs.mMode.empty() && !sArgs.mIsBatchRequest)
+        {
+            sCommandApiVersion = sf_client::Version2;
+        }
+        else if(!sSfArgs.mMode.empty() && sArgs.mIsBatchRequest
+                && CaseInsensitiveCompare("sign", sSfArgs.mMode))
+        {
+            sCommandApiVersion = sf_client::Version3;
+        }
+        else if(!sSfArgs.mMode.empty())
+        {
+            std::cout << "Batch mode not supported for non-signing operations." << std::endl;
+            sIsSuccess = false;
+        }
+        else
+        {
+            std::cout << "Batch mode not supported with V1_COMPAT_API" << std::endl;
+            sIsSuccess = false;
+        }
     }
 
     // For each connection attempt sIsSuccess = false is an unrecoverable failure. If a connection
@@ -674,7 +705,8 @@ int main(int argc, char** argv)
             }
             else
             {
-                std::cout << "Unable to connect to server, rc = " << getHumanReadableReturnCode(sRc) << std::endl;
+                std::cout << "Unable to connect to server, rc = " << getHumanReadableReturnCode(sRc)
+                          << std::endl;
             }
         }
     }
@@ -688,21 +720,41 @@ int main(int argc, char** argv)
     if(sIsSuccess)
     {
         sf_client::rc sRc = sf_client::success;
-        if(sSfArgs.mMode.empty())
+
+        switch(sCommandApiVersion)
+        {
+        case sf_client::Version1:
         {
             // No "mode" specified, send a V1 formatted request to the server
             sRc = sf_client::sendCommandV1(sSession, sSfArgs, sSfResponse);
+            break;
         }
-        else
+        case sf_client::Version2:
         {
             // "mode" is specified, send a V2 formatted request to the server
             sRc = sf_client::sendCommandV2(sSession, sSfArgs, sSfResponse);
+            break;
+        }
+        case sf_client::Version3:
+        {
+            // "sign" mode and "batch" specified, send a V3 formatted request to the server
+            sRc = sf_client::sendCommandV3(sSession, sSfArgs, sSfResponse);
+            break;
+        }
+        default:
+        {
+            std::cout << "Invalid command API version specified: " << sCommandApiVersion
+                      << std::endl;
+            sRc = sf_client::failure;
+            break;
+        }
         }
 
         if(sf_client::success != sRc)
         {
             sIsSuccess = false;
-            std::cout << "Send Command Failed with rc: " << getHumanReadableReturnCode(sRc) << std::endl;
+            std::cout << "Send Command Failed with rc: " << getHumanReadableReturnCode(sRc)
+                      << std::endl;
         }
     }
 

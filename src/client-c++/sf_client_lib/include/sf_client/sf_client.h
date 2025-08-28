@@ -74,6 +74,14 @@ namespace sf_client
         Curl_Session* mCurlSession;
     };
 
+    enum CommandApiVersion
+    {
+        VersionInvalid = 0,
+        Version1       = 1,
+        Version2       = 2,
+        Version3       = 3,
+    };
+
     rc connectToServer(const ServerInfo& serverParm, Session& sessionParm);
 
     rc disconnect(Session& sessionParm);
@@ -83,6 +91,9 @@ namespace sf_client
 
     rc
     sendCommandV2(Session& sessionParm, const CommandArgs& argsParm, CommandResponse& responseParm);
+
+    rc
+    sendCommandV3(Session& sessionParm, const CommandArgs& argsParm, CommandResponse& responseParm);
 } // namespace sf_client
 
 #endif
