@@ -290,8 +290,8 @@ sf_client::rc sf_client::sendCommandV3(Session&                      sessionParm
         sJsonRequest.mComment = argsParm.mComment;
         sJsonRequest.mParms   = argsParm.mExtraServerParms;
 
-        std::string  sJsonPayloadStr(argsParm.mPayload.begin(), argsParm.mPayload.end());
-        json_object* sBatchPayloadObj = json_tokener_parse(sJsonPayloadStr.c_str());
+        std::string sJsonPayloadStr(argsParm.mPayload.begin(), argsParm.mPayload.end());
+        sBatchPayloadObj = json_tokener_parse(sJsonPayloadStr.c_str());
         if(!sBatchPayloadObj)
         {
             std::cout << "Failed to parse input batch payload JSON." << std::endl;
