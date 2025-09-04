@@ -602,15 +602,18 @@ int main(int argc, char** argv)
         {
             sCommandApiVersion = sf_client::Version3;
         }
-        else if(!sSfArgs.mMode.empty())
+        else if(sArgs.mIsBatchRequest)
         {
-            std::cout << "Batch mode not supported for non-signing operations." << std::endl;
-            sIsSuccess = false;
-        }
-        else
-        {
-            std::cout << "Batch mode not supported with V1_COMPAT_API" << std::endl;
-            sIsSuccess = false;
+            if(!sSfArgs.mMode.empty())
+            {
+                std::cout << "Batch mode not supported for non-signing operations." << std::endl;
+                sIsSuccess = false;
+            }
+            else
+            {
+                std::cout << "Batch mode not supported with V1_COMPAT_API" << std::endl;
+                sIsSuccess = false;
+            }
         }
     }
 
