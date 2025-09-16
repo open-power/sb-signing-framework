@@ -593,18 +593,13 @@ int main(int argc, char** argv)
         sSfArgs.mComment          = sArgs.mComment;
         sSfArgs.mExtraServerParms = sArgs.mExtraServerParms;
 
-        if(!sSfArgs.mMode.empty() && !sArgs.mIsBatchRequest)
+        if(sArgs.mIsBatchRequest)
         {
-            sCommandApiVersion = sf_client::Version2;
-        }
-        else if(!sSfArgs.mMode.empty() && sArgs.mIsBatchRequest
-                && CaseInsensitiveCompare("sign", sSfArgs.mMode))
-        {
-            sCommandApiVersion = sf_client::Version3;
-        }
-        else if(sArgs.mIsBatchRequest)
-        {
-            if(!sSfArgs.mMode.empty())
+            if(!sSfArgs.mMode.empty() && CaseInsensitiveCompare("sign", sSfArgs.mMode))
+            {
+                sCommandApiVersion = sf_client::Version3;
+            }
+            else if(!sSfArgs.mMode.empty())
             {
                 std::cout << "Batch mode not supported for non-signing operations." << std::endl;
                 sIsSuccess = false;
@@ -613,6 +608,17 @@ int main(int argc, char** argv)
             {
                 std::cout << "Batch mode not supported with V1_COMPAT_API" << std::endl;
                 sIsSuccess = false;
+            }
+        }
+        else
+        {
+            if(!sSfArgs.mMode.empty())
+            {
+                sCommandApiVersion = sf_client::Version2;
+            }
+            else
+            {
+                sCommandApiVersion = sf_client::Version1;
             }
         }
     }
