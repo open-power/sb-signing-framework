@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 #include <openssl/opensslv.h>
-#if(OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 #include <openssl/core_names.h>
 #include <openssl/param_build.h>
 #endif
@@ -23,6 +23,7 @@
 #include <openssl/rsa.h>
 #include <sf_utils/sf_utils.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "pkcs11-sf-json.h"
 #include "pkcs11-sf-types.h"
@@ -78,7 +79,8 @@ CK_VERSION PKCS11_SfModule::getLibraryVersion() const { return mLibraryVersion; 
 
 bool PKCS11_SfModule::openServerConnection(std::string urlParm,
                                            std::string epwdParm,
-                                           std::string pkeyParm)
+                                           std::string pkeyParm,
+                                           const char* passwordParm)
 {
     mUrl            = urlParm;
     mEpwdPath       = epwdParm;
@@ -89,10 +91,20 @@ bool PKCS11_SfModule::openServerConnection(std::string urlParm,
     sSfServerV1.mPrivateKeyPath = mPrivateKeyPath;
     sSfServerV1.mEpwdPath       = mEpwdPath;
     sSfServerV1.mUrl            = mUrl;
-    sSfServerV1.mUseSshAgent    = true;
-    sSfServerV1.mPasswordPtr    = NULL;
+    sSfServerV1.mUseSshAgent    = (passwordParm == NULL);
+    sSfServerV1.mPasswordPtr    = passwordParm;
 #ifdef DEBUG
     sSfServerV1.mVerbose = true;
+    std::cout << "Using ssh agent: " << sSfServerV1.mUseSshAgent << std::endl;
+    std::cout << "Using password: " << (sSfServerV1.mPasswordPtr ? "YES" : "NO") << std::endl;
+    // Read own network namespace
+    char ns[256];
+    readlink("/proc/self/ns/net", ns, sizeof(ns));
+    std::cout << "PKCS11 module net namespace: " << ns << std::endl;
+    std::cout << "uid: " << getuid() << " gid: " << getgid() << std::endl;
+    std::cout << "SF_PKCS11 PID: " << getpid() << " PPID: " << getppid() << std::endl;
+    sleep(180); // gives you time to inspect
+    sSfServerV1.mCurlDebug = true;
 #else
     sSfServerV1.mVerbose = false;
 #endif
@@ -154,7 +166,7 @@ bool PKCS11_SfModule::initObjects(const PKCS11_SF_SESSION_CONFIG& configParm)
                              sResponse.mOutput.data() + sResponse.mOutput.size());
             BIO_puts(sMemoryBio, sPEM.c_str());
             // FIXME: Add some error handling for NULL pointers
-#if(OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
             EVP_PKEY* sPubKey    = PEM_read_bio_PUBKEY(sMemoryBio, NULL, NULL, NULL);
             BIGNUM*   sModulusBN = NULL;
             int       rc = EVP_PKEY_get_bn_param(sPubKey, OSSL_PKEY_PARAM_RSA_N, &sModulusBN);
@@ -200,7 +212,7 @@ bool PKCS11_SfModule::initObjects(const PKCS11_SF_SESSION_CONFIG& configParm)
 #endif
 
             if(sPubKey)
-#if(OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
                 EVP_PKEY_free(sPubKey);
 #else
                 RSA_free(sPubKey);

@@ -34,6 +34,7 @@ extern const char* SfJsonKey_ProjectArray;
 extern const char* SfJsonKey_ProjectName;
 extern const char* SfJsonKey_ProjectType;
 extern const char* SfJsonKey_HashAlgorithm;
+extern const char* SfJsonKey_UsePasswordEnv;
 
 enum
 {

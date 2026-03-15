@@ -31,3 +31,4 @@ const char* SfJsonKey_ProjectArray   = "projects";
 const char* SfJsonKey_ProjectName    = "name";
 const char* SfJsonKey_ProjectType    = "key-type";
 const char* SfJsonKey_HashAlgorithm  = "hash-algorithm";
+const char* SfJsonKey_UsePasswordEnv = "use_password_env";

@@ -38,7 +38,7 @@ class PKCS11_SfModule
 
     const std::string& getPassword() const;
 
-    bool openServerConnection(std::string urlParm, std::string epwdParm, std::string pkeyParm);
+    bool openServerConnection(std::string urlParm, std::string epwdParm, std::string pkeyParm, const char* passwordParm);
     bool closeServerConnection();
 
     bool initObjects(const PKCS11_SF_SESSION_CONFIG& configParm);

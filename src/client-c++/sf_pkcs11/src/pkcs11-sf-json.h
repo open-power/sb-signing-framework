@@ -32,6 +32,7 @@ struct PKCS11_SF_SESSION_CONFIG
     std::vector<PKCS11_SF_SESSION_PROJECTS> mProjects;
     std::string                             mEpwdPath;
     std::string                             mPrivateKeyPath;
+    bool                                    mUsePasswordEnv;
 };
 
 bool ParseJsonConfig(const std::string& jsonPath, PKCS11_SF_SESSION_CONFIG& configParm);

@@ -22,6 +22,7 @@
 #include <sf_utils/sf_utils.h>
 #include <sstream>
 #include <string>
+#include <syslog.h>
 #include <time.h>
 #include <unistd.h>
 

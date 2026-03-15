@@ -65,6 +65,28 @@ decodeJsonArray(json_object* jsonParentParm, const std::string& tagParm, json_ob
     return sIsSuccess;
 }
 
+static bool
+decodeJsonBool(json_object* jsonParentParm, const std::string& tagParm, bool& valueParm)
+{
+    bool sIsSuccess = false;
+    valueParm = false;
+    if(jsonParentParm)
+    {
+        json_object* sJsonChild = NULL;
+        json_object_object_get_ex(jsonParentParm, tagParm.c_str(), &sJsonChild);
+
+        if(sJsonChild)
+        {
+            if(json_object_is_type(sJsonChild, json_type_boolean))
+            {
+                valueParm = json_object_get_boolean(sJsonChild);
+                sIsSuccess = true;
+            }
+        }
+    }
+    return sIsSuccess;
+}
+
 bool ParseJsonConfig(const std::string& jsonPath, PKCS11_SF_SESSION_CONFIG& configParm)
 {
     std::vector<uint8_t> sJsonData;
@@ -81,6 +103,10 @@ bool ParseJsonConfig(const std::string& jsonPath, PKCS11_SF_SESSION_CONFIG& conf
         sIsSuccess &= decodeJsonString(sRootObject, SfJsonKey_Epwd, configParm.mEpwdPath);
         sIsSuccess &= decodeJsonString(
             sRootObject, SfJsonKey_PrivateKeyPath, configParm.mPrivateKeyPath);
+
+        // Optional field - defaults to false if not present
+        configParm.mUsePasswordEnv = false;
+        decodeJsonBool(sRootObject, SfJsonKey_UsePasswordEnv, configParm.mUsePasswordEnv);
 
         json_object* sArray = NULL;
         decodeJsonArray(sRootObject, SfJsonKey_ProjectArray, sArray);

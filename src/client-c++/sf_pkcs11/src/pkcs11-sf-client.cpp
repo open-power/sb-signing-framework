@@ -199,23 +199,36 @@ CK_DECLARE_FUNCTION(CK_RV, C_Initialize)(CK_VOID_PTR pInitArgs)
         return CKR_GENERAL_ERROR;
     std::cout << sJsonSuccess << std::endl;
 
+    // Get password from environment variables if use_password_env is enabled
+    const char* sPassword = NULL;
+    if(sConfig.mUsePasswordEnv)
+    {
+        const char* sPasswordEnvName = getenv("SF_PWD_ENV");
+        if(sPasswordEnvName)
+        {
+            sPassword = getenv(sPasswordEnvName);
+            if(!sPassword)
+            {
+                std::cout << "Password environment variable '" << sPasswordEnvName
+                          << "' (from SF_PWD_ENV) not defined" << std::endl;
+                return CKR_GENERAL_ERROR;
+            }
+        }
+        else
+        {
+            std::cout << "SF_PWD_ENV environment variable not defined" << std::endl;
+            return CKR_GENERAL_ERROR;
+        }
+    }
+
     SfModule = new PKCS11_SfModule();
     if(!SfModule)
     {
         return CKR_HOST_MEMORY;
     }
 
-    // DEBUG("ATTEMPT GET PASSWORD:");
-    // bool sPasswordSuccess = SfModule->promptPassword();
-    // if(!sPasswordSuccess)
-    //{
-    //    std::cout << "Error setting password" << std::endl;
-    //    return CKR_GENERAL_ERROR;
-    //}
-
-    DEBUG("ATTEMPT OPEN CONNECTION:");
     bool sCurlSuccess = SfModule->openServerConnection(
-        sConfig.mUrl, sConfig.mEpwdPath, sConfig.mPrivateKeyPath);
+        sConfig.mUrl, sConfig.mEpwdPath, sConfig.mPrivateKeyPath, sPassword);
     if(!sCurlSuccess)
     {
         std::cout << "Error opening connection" << std::endl;
